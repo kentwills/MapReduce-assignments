@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package edu.umd.cloud9.example.simple;
+
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -66,8 +66,10 @@ public class DemoWordCount extends Configured implements Tool {
 			String line = ((Text) value).toString();
 			StringTokenizer itr = new StringTokenizer(line);
 			while (itr.hasMoreTokens()) {
-				word.set(itr.nextToken());				
-					context.write(word, one);				
+				word.set(itr.nextToken());
+				if(word.matches("[A-Za-z]+")){
+					context.write(word, one);
+				}
 			}
 		}
 	}
