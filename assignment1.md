@@ -30,7 +30,13 @@ following questions:</p>
 <p><b>Question 4.</b> What is the first term
 in <code>part-r-00000</code> and how many times does it appear?</p>
 
+aaron, 416
+
 <p><b>Question 5.</b> What is the third to last term
 in <code>part-r-00004</code> and how many times does it appear?</p>
 
+zorah, 8
+
 <p><b>Question 6.</b> How many unique terms are there?
+
+31,940

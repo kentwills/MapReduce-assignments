@@ -44,7 +44,7 @@ public class WordCount extends Configured implements Tool {
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
         WORD.set(itr.nextToken());
-	if(WORD.toString().matches("[A-Za-z]+")
+	if(WORD.toString().matches("[A-Za-z]+"))
 	   context.write(WORD, ONE);
       }
     }
