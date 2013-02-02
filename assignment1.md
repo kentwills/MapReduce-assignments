@@ -40,3 +40,11 @@ zorah, 8
 <p><b>Question 6.</b> How many unique terms are there?
 
 31,940
+
+Grading
+=======
+
+Your answers are correct. However, the run script was not named correctly and the assignment answers were not in the
+expected location. Please be careful next time.
+
+-Jimmy
