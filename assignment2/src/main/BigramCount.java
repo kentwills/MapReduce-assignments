@@ -1,3 +1,5 @@
+
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -27,8 +29,8 @@ import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
 
-public class WordCount extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(WordCount.class);
+public class BigramCount extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(BigramCount.class);
 
   // Mapper: emits (token, 1) for every word occurrence.
   private static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
@@ -41,10 +43,17 @@ public class WordCount extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
+      String WORD1="";
+      String WORD2="";
       StringTokenizer itr = new StringTokenizer(line);
+      
+      if(itr.hasMoreTokens())
+    	  WORD1=itr.nextToken();
       while (itr.hasMoreTokens()) {
-        WORD.set(itr.nextToken());
+        WORD2=itr.nextToken();
+        WORD.set(WORD1 +" "+WORD2);        
         context.write(WORD, ONE);
+        WORD1=WORD2;
       }
     }
   }
@@ -72,7 +81,7 @@ public class WordCount extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  public WordCount() {}
+  public BigramCount() {}
 
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
@@ -116,15 +125,15 @@ public class WordCount extends Configured implements Tool {
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    LOG.info("Tool: " + WordCount.class.getSimpleName());
+    LOG.info("Tool: " + BigramCount.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
     LOG.info(" - output path: " + outputPath);
     LOG.info(" - number of reducers: " + reduceTasks);
 
     Configuration conf = getConf();
     Job job = Job.getInstance(conf);
-    job.setJobName(WordCount.class.getSimpleName());
-    job.setJarByClass(WordCount.class);
+    job.setJobName(BigramCount.class.getSimpleName());
+    job.setJarByClass(BigramCount.class);
 
     job.setNumReduceTasks(reduceTasks);
 
@@ -153,6 +162,6 @@ public class WordCount extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new WordCount(), args);
+    ToolRunner.run(new BigramCount(), args);
   }
 }
