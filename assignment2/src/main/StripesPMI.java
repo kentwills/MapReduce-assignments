@@ -78,8 +78,10 @@ public class StripesPMI extends Configured implements Tool {
         throws IOException, InterruptedException {
       String text = line.toString();
 
+      //Tokenize terms in document
       String[] terms = text.split("\\s+");
 
+      // Iterate through each term in the document
       for (int i = 0; i < terms.length; i++) {
         String term = terms[i];
 
@@ -87,8 +89,10 @@ public class StripesPMI extends Configured implements Tool {
         if (term.length() == 0)
           continue;
 
+        //Clear our data structure
         MAP.clear();
 
+        //For each term in neighbors(w)
         for (int j = i - window; j < i + window + 1; j++) {
           if (j == i || j < 0)
             continue;
@@ -100,10 +104,22 @@ public class StripesPMI extends Configured implements Tool {
           if (terms[j].length() == 0)
             continue;
 
+          //Check to see if we already hashed and add to the hashed value
           if (MAP.containsKey(terms[j])) {
-            MAP.increment(terms[j]);
-          } else {
+            MAP.increment(terms[j]);            
+          } 
+          //Create new hash
+          else {
             MAP.put(terms[j], 1);
+          }
+          
+          //do this for (term,*) calculation
+          if (MAP.containsKey(terms[j])) {
+            MAP.increment("*");            
+          } 
+          //Create new hash
+          else {
+            MAP.put("*", 1);
           }
         }
 
