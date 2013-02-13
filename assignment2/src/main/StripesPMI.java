@@ -130,7 +130,7 @@ public class StripesPMI extends Configured implements Tool {
   }
 
   private static class MyReducer extends
-      Reducer<Text, String2IntOpenHashMapWritable, Text, String2IntOpenHashMapWritable> {
+      Reducer<Text, String2IntOpenHashMapWritable, Text, Float> {
 
     @Override
     public void reduce(Text key, Iterable<String2IntOpenHashMapWritable> values, Context context)
@@ -141,8 +141,8 @@ public class StripesPMI extends Configured implements Tool {
       while (iter.hasNext()) {
         map.plus(iter.next());
       }
-
-      context.write(key, map);
+      int count = map.get(key);
+      context.write(key, count+0.0f);
     }
   }
 
