@@ -114,7 +114,7 @@ public class StripesPMI extends Configured implements Tool {
           }
           
           //do this for (term,*) calculation
-          if (MAP.containsKey(terms[j])) {
+          if (MAP.containsKey("*")) {
             MAP.increment("*");            
           } 
           //Create new hash
