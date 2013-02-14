@@ -46,4 +46,4 @@ It expected to see a huge performance gain in pairs because the amount of data s
 <p>----------------------</p>
 
 
-<p>Note, there is no question 6</p>
+<p>Note, there is no question 6 and I attempted the inMapperStripes, <-- named as such.  Did not quite get there with it, but have the memory flushing constructed.</p>
