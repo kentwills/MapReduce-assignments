@@ -30,7 +30,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -65,9 +65,9 @@ public class PairsPMI extends Configured implements Tool {
 	private static final Logger LOG = Logger.getLogger(PairsPMI.class);
 
 	private static class MyMapper extends
-			Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
+			Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
 		private static final PairOfStrings PAIR = new PairOfStrings();
-		private static final IntWritable ONE = new IntWritable(1);
+		private static final FloatWritable ONE = new FloatWritable(1);
 		private int window = 2;
 
 		@Override
@@ -107,7 +107,9 @@ public class PairsPMI extends Configured implements Tool {
 						continue;
 
 					// Emit the term and the
-					PAIR.set(term, terms[j]);
+					PAIR.set(term, terms[j]);					
+					context.write(PAIR, ONE);
+					PAIR.set(term, "*");
 					context.write(PAIR, ONE);
 				}
 			}
@@ -115,13 +117,13 @@ public class PairsPMI extends Configured implements Tool {
 	}
 
 	private static class MyCombiner extends
-			Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
-		private final static IntWritable SUM = new IntWritable();
+			Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
+		private final static FloatWritable SUM = new FloatWritable();
 
 		@Override
-		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
+		public void reduce(PairOfStrings key, Iterable<FloatWritable> values,
 				Context context) throws IOException, InterruptedException {
-			Iterator<IntWritable> iter = values.iterator();
+			Iterator<FloatWritable> iter = values.iterator();
 			int sum = 0;
 			while (iter.hasNext()) {
 				sum += iter.next().get();
@@ -132,15 +134,15 @@ public class PairsPMI extends Configured implements Tool {
 	}
 
 	private static class MyReducer extends
-			Reducer<PairOfStrings, IntWritable, PairOfStrings, FloatWritable> {		
+			Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {		
 		private static final FloatWritable VALUE = new FloatWritable();
 		private float marginal = 0.0f;
 		
 		@Override
-		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
+		public void reduce(PairOfStrings key, Iterable<FloatWritable> values,
 				Context context) throws IOException, InterruptedException {
 			float sum = 0.0f;
-			Iterator<IntWritable> iter = values.iterator();			
+			Iterator<FloatWritable> iter = values.iterator();			
 			while (iter.hasNext()) {
 				sum += iter.next().get();
 			}
@@ -150,16 +152,16 @@ public class PairsPMI extends Configured implements Tool {
 				context.write(key, VALUE);
 				marginal = sum;
 			} else {
-				VALUE.set(marginal);
+				VALUE.set(sum/marginal);
 				context.write(key, VALUE);
 			}			
 		}
 	}
 
 	protected static class MyPartitioner extends
-			Partitioner<PairOfStrings, IntWritable> {
+			Partitioner<PairOfStrings, FloatWritable> {
 		@Override
-		public int getPartition(PairOfStrings key, IntWritable value,
+		public int getPartition(PairOfStrings key, FloatWritable value,
 				int numReduceTasks) {
 			return (key.getLeftElement().hashCode() & Integer.MAX_VALUE)
 					% numReduceTasks;
@@ -242,7 +244,7 @@ public class PairsPMI extends Configured implements Tool {
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
 		job.setMapOutputKeyClass(PairOfStrings.class);
-		job.setMapOutputValueClass(IntWritable.class);
+		job.setMapOutputValueClass(FloatWritable.class);
 		job.setOutputKeyClass(PairOfStrings.class);
 		job.setOutputValueClass(FloatWritable.class);
 
