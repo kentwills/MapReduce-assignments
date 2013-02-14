@@ -75,6 +75,25 @@
     <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
   </target>
 
+  <!-- download maven from web site so that it can be used even without any special installation -->
+  <target name="download-maven" depends="init" unless="skip.download">
+    <mkdir dir="${maven.jar.dir}"/>
+    <echo message="installing maven ant tasks..."/>
+    <get src="http://repo1.maven.org/maven2/org/apache/maven/maven-ant-tasks/${maven.ant.task.version}/maven-ant-tasks-${maven.ant.task.version}.jar"
+         dest="${maven.jar.file}" usetimestamp="true"/>
+  </target>
+
+  <!-- try to load ivy here from local ivy dir, in case the user has not already dropped
+       it into ant's lib dir (note that the latter copy will always take precedence).
+       We will not fail as long as local lib dir exists (it may be empty) and
+       ivy is in at least one of ant's lib dir or the local lib dir. -->
+  <target name="install-maven" depends="download-maven" description="--> install ivy">
+    <path id="maven.lib.path">
+      <fileset dir="${maven.jar.dir}" includes="*.jar"/>
+    </path>
+    <taskdef uri="antlib:org.apache.maven.artifact.ant" classpathref="maven.lib.path"/>
+  </target>
+
   <target name="resolve" depends="install-ivy" description="--> retreive dependencies with ivy">
     <ivy:retrieve/>
   </target>
