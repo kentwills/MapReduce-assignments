@@ -169,13 +169,15 @@ public class StripesPMI extends Configured implements Tool {
 				map.plus(iter.next());
 
 			}
-			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map
-					.getEntriesSortedByKey();
-
+			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map.getEntriesSortedByKey();
+			if(data.length!=0)
 			for (int i = 0; i < data.length; i++) {
-				cur = data[i].toString();
-
-				frequency = (float) map.get(cur) / map.get("*");
+				cur = data[i].getKey();
+				try{
+					frequency = (float) map.get(cur) / map.get("*");
+				}
+				catch(Exception e){LOG.debug("Error: Reducer:"+e);frequency=0;}
+				
 				BIGRAM.set(prev + "," + cur);
 				FREQ.set(frequency);
 				if(i==0)System.out.println(prev + "," + cur + "|"+ frequency);
