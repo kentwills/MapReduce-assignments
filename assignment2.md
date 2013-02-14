@@ -6,9 +6,9 @@ MapReduce jobs? What are the input records? What are the intermediate
 key-value pairs? What are the final output records? A paragraph for
 each implementation is about the expected length.</p>
 
-Stripes: I implemented this with HMapSIW because we are able to obtain a listing of the keys in the hashmap.  The example given on Cloud9 uses a hashmap that does not allow for this.  I either increment or add a new key in the mapper when a new word for the key is added and complement it with initializing or incrementing the * entry. My combiner is a simple receive Text, HMapSIW and send Text, HMapSIW, which are in-turn the intermediate key,value pairs. Final output records are "Text Value" such as "the,apple .6", where value is the frequency.
+Stripes: I implemented this with HMapSIW because we are able to obtain a listing of the keys in the hashmap.  The example given on Cloud9 uses a hashmap that does not allow for this.  I either increment or add a new key in the mapper when a new word for the key is added and complement it with initializing or incrementing the * entry. My combiner is a simple receive Text, HMapSIW and send Text, HMapSIW, which are in-turn the intermediate key,value pairs. Final output records are "Text Value" such as "the,apple .6", where value is the PMI.
 
-Pairs: I implemented this with Pairs as the main key.  My intermediate values are PairOfStrings and FloatWritable where I emit the string pair and an extra string with the * token.  My combiner just compresses the pairs.  The final output values are "Pair Value"such as "(the,apple) .2", where value is the frequency.
+Pairs: I implemented this with Pairs as the main key.  My intermediate values are PairOfStrings and FloatWritable where I emit the string pair and an extra string with the * token.  My combiner just compresses the pairs.  The Partitioner sorts by the first word. The final output values are "Pair Value"such as "(the,apple) .2", where value is the PMI.
 
 <p><b>Question 1.</b> What is the running time of the complete pairs
 implementation (in your VM)? What is the running time of the complete
@@ -36,23 +36,21 @@ Write a sentence or two to explain what it is and why it has such a
 high PMI.</p>
 
 <p>
-PMI is merely the specific instance divided by the sum of more general instances related to that instance.  If you only have one general instance like "ariel's,*" meaning it is very unique in the documents, you will have a perfect PMI.  In this case, "unkinglike,appear" leads to a PMI of one because there are no other instances with the word "unkinglike."  As there are multiple instances with a value equal to one, there are many possible answers to this question.  If we removed/convert apostrophes we might have better results.
+(deserves',he) "he" has a high occurence in the documents and the pair itself has a high occurence, leading to a high PMI.
 </p>
-<p>
-I went a little further and disregarded all pairs with a PMI of 1, and found lady',lady has a PMI of 75%, assume this is also because of the rarity of the word, having maybe only 4 hits in the data.
-</p>
+
 <p><b>Question 5.</b> What are the three words that have the highest
 PMI with "cloud" and "love"? And what are the PMI values?</p>
 
 cloud = (the,a,and)
-cloud,the = .1663
-cloud,a =   .1141
-cloud,and = .0696
+cloud, the = 3.9173
+cloud, a =   3.5404
+cloud, and = 3.0464
 
 love = (i,of,my)
-love, i =  .0446
-love, of = .0381
-love, my = .0379
+love, i =  -0.1761
+love, of = -0.3329
+love, my = -0.3393
 
 
 <p>Note, there is no question 6</p>
