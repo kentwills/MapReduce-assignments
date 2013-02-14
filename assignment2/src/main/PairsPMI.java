@@ -150,7 +150,7 @@ public class PairsPMI extends Configured implements Tool {
 				context.write(key, VALUE);
 				marginal = sum;
 			} else {
-				VALUE.set(sum / marginal);
+				VALUE.set(marginal);
 				context.write(key, VALUE);
 			}			
 		}
