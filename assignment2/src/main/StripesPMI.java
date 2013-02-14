@@ -168,11 +168,14 @@ public class StripesPMI extends Configured implements Tool {
 				map.plus(iter.next());
 
 			}
+			if(map.size()!=0){		
 			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map.getEntriesSortedByKey();
-			if(data.length!=0)
+			
 			for (int i = 0; i < data.length; i++) {
+				
 				cur = data[i].getKey();
 				try{
+					if(cur.equals("*"))
 					frequency = (float) map.get(cur) / map.get("*");
 				}
 				catch(Exception e){LOG.debug("Error: Reducer:"+e);frequency=0;}
@@ -181,7 +184,7 @@ public class StripesPMI extends Configured implements Tool {
 				FREQ.set(frequency);
 				if(i==0)System.out.println(prev + "," + cur + "|"+ frequency);
 				context.write(BIGRAM, FREQ);
-			}
+			}}
 
 		}
 	}
