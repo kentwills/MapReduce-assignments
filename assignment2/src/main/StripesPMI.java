@@ -151,7 +151,7 @@ public class StripesPMI extends Configured implements Tool {
 
 	private static class MyReducer extends
 			Reducer<Text, HMapSIW, Text, FloatWritable> {
-		private final static FloatWritable FREQ = new FloatWritable();
+		private final static FloatWritable PMI = new FloatWritable();
 		private final static Text BIGRAM = new Text();
 
 		@Override
@@ -161,31 +161,31 @@ public class StripesPMI extends Configured implements Tool {
 			Iterator<HMapSIW> iter = values.iterator();
 			HMapSIW map = new HMapSIW();
 			float frequency = 0;
-			String prev = key.toString(), cur = "-";
+			float sum = 0;
+			float totalWords = 10;
+			String prev = key.toString(), cur = "";
 
 			while (iter.hasNext()) {
 				map.plus(iter.next());
 			}
-			
-			if(map.size()!=0){		
-			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map.getEntriesSortedByKey();
-			
-			for (int i = 0; i < data.length; i++) {
-				
-				cur = data[i].getKey();
-				try{
-					if(cur.equals("*"))
-						frequency = map.get("*");
-					else
-						frequency = (float) map.get(cur) / map.get("*");
+
+			if (map.size() != 0) {
+				edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map
+						.getEntriesSortedByKey();
+
+				if (map.get("*") > 9) {
+					for (int i = 0; i < data.length; i++) {
+						sum = map.get("*");
+						cur = data[i].getKey();
+						frequency = (float) map.get(cur) / sum;
+
+						BIGRAM.set(prev + "," + cur);
+						PMI.set((float)Math.log(frequency/(sum/totalWords)));
+						
+						context.write(BIGRAM, PMI);
+					}
 				}
-				catch(Exception e){LOG.debug("Error: Reducer:"+e);frequency=0;}
-				
-				BIGRAM.set(prev + "," + cur);
-				FREQ.set(frequency);
-				if(i==0)System.out.println(prev + "," + cur + "|"+ frequency);
-				context.write(BIGRAM, FREQ);
-			}}
+			}
 
 		}
 	}

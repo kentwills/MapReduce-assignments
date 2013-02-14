@@ -20,12 +20,13 @@ Stripes: 61.184 seconds
 <p><b>Question 2.</b> Now disable all combiners. What is the running
 time of the complete pairs implementation now? What is the running
 time of the complete stripes implementation?</p>
-
+<p>
 Pairs: 96.501
 Stripes: 61.704 seconds
-
+</p>
+<p>
 It expected to see a huge performance gain in pairs because the amount of data sent across the network.  I am thinking there wasn't enough data for the combiners to get evoked?
-
+</p>
 <p><b>Question 3.</b> How many distinct PMI pairs did you extract?</p>
 
 1439667
@@ -34,8 +35,12 @@ It expected to see a huge performance gain in pairs because the amount of data s
 Write a sentence or two to explain what it is and why it has such a
 high PMI.</p>
 
+<p>
 PMI is merely the specific instance divided by the sum of more general instances related to that instance.  If you only have one general instance like "ariel's,*" meaning it is very unique in the documents, you will have a perfect PMI.  In this case, "unkinglike,appear" leads to a PMI of one because there are no other instances with the word "unkinglike."  As there are multiple instances with a value equal to one, there are many possible answers to this question.  If we removed/convert apostrophes we might have better results.
-
+</p>
+<p>
+I went a little further and disregarded all pairs with a PMI of 1, and found lady',lady has a PMI of 75%, assume this is also because of the rarity of the word, having maybe only 4 hits in the data.
+</p>
 <p><b>Question 5.</b> What are the three words that have the highest
 PMI with "cloud" and "love"? And what are the PMI values?</p>
 

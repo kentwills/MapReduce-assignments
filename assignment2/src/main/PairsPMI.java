@@ -107,7 +107,7 @@ public class PairsPMI extends Configured implements Tool {
 						continue;
 
 					// Emit the term and the
-					PAIR.set(term, terms[j]);					
+					PAIR.set(term, terms[j]);
 					context.write(PAIR, ONE);
 					PAIR.set(term, "*");
 					context.write(PAIR, ONE);
@@ -127,34 +127,37 @@ public class PairsPMI extends Configured implements Tool {
 			int sum = 0;
 			while (iter.hasNext()) {
 				sum += iter.next().get();
-			}			
-		      SUM.set(sum);
-		      context.write(key, SUM);
+			}
+			SUM.set(sum);
+			context.write(key, SUM);
 		}
 	}
 
 	private static class MyReducer extends
-			Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {		
+			Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
 		private static final FloatWritable VALUE = new FloatWritable();
 		private float marginal = 0.0f;
-		
+		private float totalWords = 10;
+
 		@Override
 		public void reduce(PairOfStrings key, Iterable<FloatWritable> values,
 				Context context) throws IOException, InterruptedException {
 			float sum = 0.0f;
-			Iterator<FloatWritable> iter = values.iterator();			
+			Iterator<FloatWritable> iter = values.iterator();
 			while (iter.hasNext()) {
 				sum += iter.next().get();
 			}
 
-			if (key.getRightElement().equals("*")) {
-				VALUE.set(sum);
-				context.write(key, VALUE);
-				marginal = sum;
-			} else {
-				VALUE.set(sum/marginal);
-				context.write(key, VALUE);
-			}			
+			if (sum > 9) {
+				if (key.getRightElement().equals("*")) {
+					VALUE.set(sum);
+					context.write(key, VALUE);
+					marginal = sum;
+				} else {
+					VALUE.set((float)Math.log(sum / marginal)/(marginal/totalWords));
+					context.write(key, VALUE);
+				}
+			}
 		}
 	}
 
