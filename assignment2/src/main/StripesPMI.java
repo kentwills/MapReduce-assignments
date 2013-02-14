@@ -1,3 +1,4 @@
+
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -43,12 +44,8 @@ import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
 
-import edu.umd.cloud9.io.array.ArrayOfFloatsWritable;
-import edu.umd.cloud9.io.map.HMapSFW;
-import edu.umd.cloud9.io.map.HMapSFW;
-import edu.umd.cloud9.io.pair.PairOfStrings;
-import edu.umd.cloud9.util.map.MapIV.Entry;
-import edu.umd.cloud9.util.map.MapKI;
+import edu.umd.cloud9.io.map.HMapSIW;
+
 
 /**
  * <p>
@@ -69,8 +66,8 @@ public class StripesPMI extends Configured implements Tool {
 	private static final Logger LOG = Logger.getLogger(StripesPMI.class);
 
 	private static class MyMapper extends
-			Mapper<LongWritable, Text, Text, HMapSFW> {
-		private static final HMapSFW MAP = new HMapSFW();
+			Mapper<LongWritable, Text, Text, HMapSIW> {
+		private static final HMapSIW MAP = new HMapSIW();
 		private static final Text KEY = new Text();
 
 		private int window = 2;
@@ -138,30 +135,39 @@ public class StripesPMI extends Configured implements Tool {
 	}
 
 	private static class MyReducer extends
-			Reducer<Text, HMapSFW, Text, HMapSFW> {
-		//private final static FloatWritable FREQ = new FloatWritable();
-		//private final static HMapSFW MAP = new HMapSFW();
+			Reducer<Text, HMapSIW, Text, FloatWritable> {
+		private final static FloatWritable FREQ = new FloatWritable();
+		private final static Text BIGRAM = new Text();
 
 		@Override
 		public void reduce(Text key,
-				Iterable<HMapSFW> values, Context context)
+				Iterable<HMapSIW> values, Context context)
 				throws IOException, InterruptedException {
 
-			Iterator<HMapSFW> iter = values.iterator();
-			HMapSFW map = new HMapSFW();
+			Iterator<HMapSIW> iter = values.iterator();
+			HMapSIW map = new HMapSIW();
+			float frequency = 0;
+			String prev = key.toString(), cur = "-";
 
-			while (iter.hasNext()) {	
+			while (iter.hasNext()) {
+				
 				map.plus(iter.next());	
+				
+			}
+			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map.getEntriesSortedByKey();
+			
+			for(int i=0;i<data.length;i++){
+				cur=data[i].toString();
+				
+				frequency = (float)map.get(cur)/map.get("*");
+				BIGRAM.set(prev + "," + cur);
+				FREQ.set(frequency);
+
+				context.write(BIGRAM, FREQ);
 			}
 			
-			edu.umd.cloud9.util.map.MapKF.Entry<String>[] data = map.getEntriesSortedByValue();
-			String cur = "";
-			for(int i=0;i<data.length;i++){				
-				cur=data[i].toString();
-				map.remove(cur);				
-				map.put(cur, (float)map.get(cur)/map.get("*"));			
-			}			
-			context.write(key, map);
+			
+
 		}
 	}
 
@@ -241,10 +247,9 @@ public class StripesPMI extends Configured implements Tool {
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
 		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(HMapSFW.class);
-		
+		job.setMapOutputValueClass(HMapSIW.class);
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(HMapSFW.class);
+		//job.setOutputValueClass(FloatWritable.class);
 
 		job.setMapperClass(MyMapper.class);
 		job.setCombinerClass(MyReducer.class);
