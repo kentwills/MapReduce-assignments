@@ -1,6 +1,6 @@
 import fileinput
 import glob
-
+  
 cloudlist = []
 value=0
 for line in fileinput.input(glob.glob("part-r-0000*")):
