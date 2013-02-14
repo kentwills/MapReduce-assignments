@@ -1,4 +1,3 @@
-
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -30,6 +29,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -43,201 +43,223 @@ import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
 
+import edu.umd.cloud9.io.array.ArrayOfFloatsWritable;
 import edu.umd.cloud9.io.map.String2IntOpenHashMapWritable;
+import edu.umd.cloud9.io.pair.PairOfStrings;
 
 /**
  * <p>
- * Implementation of the "pairs" algorithm for computing co-occurrence matrices from a large text
- * collection. This algorithm is described in Chapter 3 of "Data-Intensive Text Processing with 
- * MapReduce" by Lin &amp; Dyer, as well as the following paper:
+ * Implementation of the "pairs" algorithm for computing co-occurrence matrices
+ * from a large text collection. This algorithm is described in Chapter 3 of
+ * "Data-Intensive Text Processing with MapReduce" by Lin &amp; Dyer, as well as
+ * the following paper:
  * </p>
- *
- * <blockquote>Jimmy Lin. <b>Scalable Language Processing Algorithms for the Masses: A Case Study in
- * Computing Word Co-occurrence Matrices with MapReduce.</b> <i>Proceedings of the 2008 Conference
- * on Empirical Methods in Natural Language Processing (EMNLP 2008)</i>, pages 419-428.</blockquote>
- *
+ * 
+ * <blockquote>Jimmy Lin. <b>Scalable Language Processing Algorithms for the
+ * Masses: A Case Study in Computing Word Co-occurrence Matrices with
+ * MapReduce.</b> <i>Proceedings of the 2008 Conference on Empirical Methods in
+ * Natural Language Processing (EMNLP 2008)</i>, pages 419-428.</blockquote>
+ * 
  * @author Jimmy Lin
  */
 public class StripesPMI extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(StripesPMI.class);
+	private static final Logger LOG = Logger.getLogger(StripesPMI.class);
 
-  private static class MyMapper extends
-      Mapper<LongWritable, Text, Text, String2IntOpenHashMapWritable> {
-    private static final String2IntOpenHashMapWritable MAP = new String2IntOpenHashMapWritable();
-    private static final Text KEY = new Text();
+	private static class MyMapper extends
+			Mapper<LongWritable, Text, Text, String2IntOpenHashMapWritable> {
+		private static final String2IntOpenHashMapWritable MAP = new String2IntOpenHashMapWritable();
+		private static final Text KEY = new Text();
 
-    private int window = 2;
+		private int window = 2;
 
-    @Override
-    public void setup(Context context) {
-      window = context.getConfiguration().getInt("window", 2);
-    }
+		@Override
+		public void setup(Context context) {
+			window = context.getConfiguration().getInt("window", 2);
+		}
 
-    @Override
-    public void map(LongWritable key, Text line, Context context)
-        throws IOException, InterruptedException {
-      String text = line.toString();
+		@Override
+		public void map(LongWritable key, Text line, Context context)
+				throws IOException, InterruptedException {
+			String text = line.toString();
 
-      //Tokenize terms in document
-      String[] terms = text.split("\\s+");
+			// Tokenize terms in document
+			String[] terms = text.split("\\s+");
 
-      // Iterate through each term in the document
-      for (int i = 0; i < terms.length; i++) {
-        String term = terms[i];
+			// Iterate through each term in the document
+			for (int i = 0; i < terms.length; i++) {
+				String term = terms[i];
 
-        // skip empty tokens
-        if (term.length() == 0)
-          continue;
+				// skip empty tokens
+				if (term.length() == 0)
+					continue;
 
-        //Clear our data structure
-        MAP.clear();
+				// Clear our data structure
+				MAP.clear();
 
-        //For each term in neighbors(w)
-        for (int j = i - window; j < i + window + 1; j++) {
-          if (j == i || j < 0)
-            continue;
+				// For each term in neighbors(w)
+				for (int j = i - window; j < i + window + 1; j++) {
+					if (j == i || j < 0)
+						continue;
 
-          if (j >= terms.length)
-            break;
+					if (j >= terms.length)
+						break;
 
-          // skip empty tokens
-          if (terms[j].length() == 0)
-            continue;
+					// skip empty tokens
+					if (terms[j].length() == 0)
+						continue;
 
-          //Check to see if we already hashed and add to the hashed value
-          if (MAP.containsKey(terms[j])) {
-            MAP.increment(terms[j]);            
-          } 
-          //Create new hash
-          else {
-            MAP.put(terms[j], 1);
-          }
-          
-          //do this for (term,*) calculation
-          if (MAP.containsKey("*")) {
-            MAP.increment("*");            
-          } 
-          //Create new hash
-          else {
-            MAP.put("*", 1);
-          }
-        }
+					// Check to see if we already hashed and add to the hashed
+					// value
+					if (MAP.containsKey(terms[j])) {
+						MAP.increment(terms[j]);
+					}
+					// Create new hash
+					else {
+						MAP.put(terms[j], 1);
+					}
 
-        KEY.set(term);
-        context.write(KEY, MAP);
-      }
-    }
-  }
+					// do this for (term,*) calculation
+					if (MAP.containsKey("*")) {
+						MAP.increment("*");
+					}
+					// Create new hash
+					else {
+						MAP.put("*", 1);
+					}
+				}
 
-  private static class MyReducer extends
-      Reducer<Text, String2IntOpenHashMapWritable, Text, Float> {
+				KEY.set(term);
+				context.write(KEY, MAP);
+			}
+		}
+	}
 
-    @Override
+	private static class MyReducer
+			extends
+			Reducer<Text, String2IntOpenHashMapWritable, PairOfStrings, FloatWritable> {
+		private final static FloatWritable FREQ = new FloatWritable();
+		private final static PairOfStrings BIGRAM = new PairOfStrings();
+
+		@Override
     public void reduce(Text key, Iterable<String2IntOpenHashMapWritable> values, Context context)
         throws IOException, InterruptedException {
+    	
       Iterator<String2IntOpenHashMapWritable> iter = values.iterator();
-      String2IntOpenHashMapWritable map = new String2IntOpenHashMapWritable();
+      String2IntOpenHashMapWritable map = new String2IntOpenHashMapWritable();      
+      float frequency = 0;
+      String prev=key.toString(),cur="-";
 
-      while (iter.hasNext()) {
-        map.plus(iter.next());
+      while (iter.hasNext()) { 
+    	  
+        map.plus(iter.next());        
       }
-      int count = map.get(key);
-      context.write(key, count+0.0f);
+      
+            
+      frequency=map.get("*");
+      BIGRAM.set(prev, cur);
+      FREQ.set(frequency);
+      
+      context.write(BIGRAM, FREQ);
     }
-  }
+	}
 
-  /**
-   * Creates an instance of this tool.
-   */
-  public StripesPMI() {}
+	/**
+	 * Creates an instance of this tool.
+	 */
+	public StripesPMI() {
+	}
 
-  private static final String INPUT = "input";
-  private static final String OUTPUT = "output";
-  private static final String WINDOW = "window";
-  private static final String NUM_REDUCERS = "numReducers";
+	private static final String INPUT = "input";
+	private static final String OUTPUT = "output";
+	private static final String WINDOW = "window";
+	private static final String NUM_REDUCERS = "numReducers";
 
-  /**
-   * Runs this tool.
-   */
-  @SuppressWarnings({ "static-access" })
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
+	/**
+	 * Runs this tool.
+	 */
+	@SuppressWarnings({ "static-access" })
+	public int run(String[] args) throws Exception {
+		Options options = new Options();
 
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INPUT));
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("output path").create(OUTPUT));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("window size").create(WINDOW));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("number of reducers").create(NUM_REDUCERS));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("input path").create(INPUT));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("output path").create(OUTPUT));
+		options.addOption(OptionBuilder.withArgName("num").hasArg()
+				.withDescription("window size").create(WINDOW));
+		options.addOption(OptionBuilder.withArgName("num").hasArg()
+				.withDescription("number of reducers").create(NUM_REDUCERS));
 
-    CommandLine cmdline;
-    CommandLineParser parser = new GnuParser();
+		CommandLine cmdline;
+		CommandLineParser parser = new GnuParser();
 
-    try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
-      return -1;
-    }
+		try {
+			cmdline = parser.parse(options, args);
+		} catch (ParseException exp) {
+			System.err.println("Error parsing command line: "
+					+ exp.getMessage());
+			return -1;
+		}
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
-      System.out.println("args: " + Arrays.toString(args));
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setWidth(120);
-      formatter.printHelp(this.getClass().getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      return -1;
-    }
+		if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
+			System.out.println("args: " + Arrays.toString(args));
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.setWidth(120);
+			formatter.printHelp(this.getClass().getName(), options);
+			ToolRunner.printGenericCommandUsage(System.out);
+			return -1;
+		}
 
-    String inputPath = cmdline.getOptionValue(INPUT);
-    String outputPath = cmdline.getOptionValue(OUTPUT);
-    int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
-        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
-    int window = cmdline.hasOption(WINDOW) ? Integer.parseInt(cmdline.getOptionValue(WINDOW)) : 2;
+		String inputPath = cmdline.getOptionValue(INPUT);
+		String outputPath = cmdline.getOptionValue(OUTPUT);
+		int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ? Integer
+				.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
+		int window = cmdline.hasOption(WINDOW) ? Integer.parseInt(cmdline
+				.getOptionValue(WINDOW)) : 2;
 
-    LOG.info("Tool: " + StripesPMI.class.getSimpleName());
-    LOG.info(" - input path: " + inputPath);
-    LOG.info(" - output path: " + outputPath);
-    LOG.info(" - window: " + window);
-    LOG.info(" - number of reducers: " + reduceTasks);
+		LOG.info("Tool: " + StripesPMI.class.getSimpleName());
+		LOG.info(" - input path: " + inputPath);
+		LOG.info(" - output path: " + outputPath);
+		LOG.info(" - window: " + window);
+		LOG.info(" - number of reducers: " + reduceTasks);
 
-    Job job = Job.getInstance(getConf());
-    job.setJobName(StripesPMI.class.getSimpleName());
-    job.setJarByClass(StripesPMI.class);
+		Job job = Job.getInstance(getConf());
+		job.setJobName(StripesPMI.class.getSimpleName());
+		job.setJarByClass(StripesPMI.class);
 
-    // Delete the output directory if it exists already.
-    Path outputDir = new Path(outputPath);
-    FileSystem.get(getConf()).delete(outputDir, true);
+		// Delete the output directory if it exists already.
+		Path outputDir = new Path(outputPath);
+		FileSystem.get(getConf()).delete(outputDir, true);
 
-    job.getConfiguration().setInt("window", window);
+		job.getConfiguration().setInt("window", window);
 
-    job.setNumReduceTasks(reduceTasks);
+		job.setNumReduceTasks(reduceTasks);
 
-    FileInputFormat.setInputPaths(job, new Path(inputPath));
-    FileOutputFormat.setOutputPath(job, new Path(outputPath));
+		FileInputFormat.setInputPaths(job, new Path(inputPath));
+		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
-    job.setMapOutputKeyClass(Text.class);
-    job.setOutputValueClass(String2IntOpenHashMapWritable.class);
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(String2IntOpenHashMapWritable.class);
+		job.setMapOutputKeyClass(Text.class);
+		job.setOutputValueClass(String2IntOpenHashMapWritable.class);
+		job.setOutputKeyClass(PairOfStrings.class);
+		job.setOutputValueClass(FloatWritable.class);
 
-    job.setMapperClass(MyMapper.class);
-    job.setCombinerClass(MyReducer.class);
-    job.setReducerClass(MyReducer.class);
+		job.setMapperClass(MyMapper.class);
+		job.setCombinerClass(MyReducer.class);
+		job.setReducerClass(MyReducer.class);
 
-    long startTime = System.currentTimeMillis();
-    job.waitForCompletion(true);
-    System.out.println("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+		long startTime = System.currentTimeMillis();
+		job.waitForCompletion(true);
+		System.out.println("Job Finished in "
+				+ (System.currentTimeMillis() - startTime) / 1000.0
+				+ " seconds");
 
-    return 0;
-  }
+		return 0;
+	}
 
-  /**
-   * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
-   */
-  public static void main(String[] args) throws Exception {
-    ToolRunner.run(new StripesPMI(), args);
-  }
+	/**
+	 * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
+	 */
+	public static void main(String[] args) throws Exception {
+		ToolRunner.run(new StripesPMI(), args);
+	}
 }
