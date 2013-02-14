@@ -21,10 +21,10 @@ Stripes: 61.184 seconds
 time of the complete pairs implementation now? What is the running
 time of the complete stripes implementation?</p>
 
-Pairs: 95.014
+Pairs: 96.501
 Stripes: 61.704 seconds
 
-It was expected to see the performance gain in pairs because the amount of data sent across the network.  I am thinking there wasn't enough data for the combiners to get evoked?
+It expected to see a huge performance gain in pairs because the amount of data sent across the network.  I am thinking there wasn't enough data for the combiners to get evoked?
 
 <p><b>Question 3.</b> How many distinct PMI pairs did you extract?</p>
 
@@ -34,11 +34,20 @@ It was expected to see the performance gain in pairs because the amount of data 
 Write a sentence or two to explain what it is and why it has such a
 high PMI.</p>
 
-PMI is merely the specific instance divided by the sum of more general instances related to that instance.  If you only have one general instance like "ariel's,*" meaning it is very unique in the documents, you will have a perfect PMI.  In this case, "ariel's","song" leads to a PMI of one because there are no other instances with the word "ariel's."  If we removed/convert apostrophes we might have better results.
+PMI is merely the specific instance divided by the sum of more general instances related to that instance.  If you only have one general instance like "ariel's,*" meaning it is very unique in the documents, you will have a perfect PMI.  In this case, "unkinglike,appear" leads to a PMI of one because there are no other instances with the word "unkinglike."  As there are multiple instances with a value equal to one, there are many possible answers to this question.  If we removed/convert apostrophes we might have better results.
 
 <p><b>Question 5.</b> What are the three words that have the highest
 PMI with "cloud" and "love"? And what are the PMI values?</p>
 
-<p>Note that you can compute the answer to questions 3&mdash;6 however
-you wish: a helper Java program, a Python script, command-line
-manipulation, etc.</p>
+cloud = (the,a,and)
+cloud,the = .1663
+cloud,a =   .1141
+cloud,and = .0696
+
+love = (i,of,my)
+love, i =  .0446
+love, of = .0381
+love, my = .0379
+
+
+<p>Note, there is no question 6</p>
