@@ -177,4 +177,49 @@
 
   </target>
 
+<target name="gen-pom" depends="install-ivy">
+    <ivy:makepom ivyfile="ivy/ivy.xml" pomfile="cloud9.pom" />
+  </target>
+
+  <target name="publish-local" depends="jar" description="publish jar/source to maven repo mounted at ~/.m2/repository">
+    <ivy:publish resolver="local-m2-publish" forcedeliver="true" overwrite="true" publishivy="false">
+      <artifacts pattern="${dist.dir}/[artifact]-[revision].[ext]"/>
+      <artifacts pattern="pom.xml"/>
+    </ivy:publish>
+  </target>
+
+  <target name="deploy" depends="dist,install-maven" description="deploy to Nexus">
+    <!-- sign and deploy the main artifact -->
+    <artifact:mvn>
+      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+      <arg value="-Durl=${maven-repository-url}" />
+      <arg value="-DrepositoryId=${maven-repository-id}" />
+      <arg value="-DpomFile=pom.xml" />
+      <arg value="-Dfile=${maven-jar}" />
+      <arg value="-Pgpg" />
+    </artifact:mvn>
+
+    <!-- sign and deploy the sources artifact -->
+    <artifact:mvn>
+      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+      <arg value="-Durl=${maven-repository-url}" />
+      <arg value="-DrepositoryId=${maven-repository-id}" />
+      <arg value="-DpomFile=pom.xml" />
+      <arg value="-Dfile=${maven-sources-jar}" />
+      <arg value="-Dclassifier=sources" />
+      <arg value="-Pgpg" />
+    </artifact:mvn>
+
+    <!-- sign and deploy the javadoc artifact -->
+    <artifact:mvn>
+      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+      <arg value="-Durl=${maven-repository-url}" />
+      <arg value="-DrepositoryId=${maven-repository-id}" />
+      <arg value="-DpomFile=pom.xml" />
+      <arg value="-Dfile=${maven-javadoc-jar}" />
+      <arg value="-Dclassifier=javadoc" />
+      <arg value="-Pgpg" />
+    </artifact:mvn>
+  </target>
+
 </project>
