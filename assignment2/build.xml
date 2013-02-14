@@ -175,6 +175,6 @@
 
       <chmod dir="./etc/" perm="ugo+rx" includes="**/*.sh"/>
 
-  </target
+  </target>
 
 </project>
