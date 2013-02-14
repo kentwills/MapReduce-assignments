@@ -143,10 +143,9 @@ public class StripesPMI extends Configured implements Tool {
 			HMapSIW map = new HMapSIW();
 
 			while (iter.hasNext()) {
-
 				map.plus(iter.next());
-
 			}
+			context.write(key, map);
 		}
 	}
 
