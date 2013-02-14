@@ -139,8 +139,8 @@ public class PairsPMI extends Configured implements Tool {
 		@Override
 		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
 				Context context) throws IOException, InterruptedException {
-			Iterator<IntWritable> iter = values.iterator();
-			int sum = 0;
+			float sum = 0.0f;
+			Iterator<IntWritable> iter = values.iterator();			
 			while (iter.hasNext()) {
 				sum += iter.next().get();
 			}

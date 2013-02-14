@@ -10,7 +10,7 @@ each implementation is about the expected length.</p>
 implementation (in your VM)? What is the running time of the complete
 stripes implementation (in your VM)?</p>
 
-Pairs:
+Pairs:	117.48 seconds
 Stripes: 61.184 seconds
 
 <p><b>Question 2.</b> Now disable all combiners. What is the running
