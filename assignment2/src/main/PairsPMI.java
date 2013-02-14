@@ -1,4 +1,3 @@
-
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -30,6 +29,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -48,180 +48,222 @@ import edu.umd.cloud9.io.pair.PairOfStrings;
 
 /**
  * <p>
- * Implementation of the "pairs" algorithm for computing co-occurrence matrices from a large text
- * collection. This algorithm is described in Chapter 3 of "Data-Intensive Text Processing with 
- * MapReduce" by Lin &amp; Dyer, as well as the following paper:
+ * Implementation of the "pairs" algorithm for computing co-occurrence matrices
+ * from a large text collection. This algorithm is described in Chapter 3 of
+ * "Data-Intensive Text Processing with MapReduce" by Lin &amp; Dyer, as well as
+ * the following paper:
  * </p>
- *
- * <blockquote>Jimmy Lin. <b>Scalable Language Processing Algorithms for the Masses: A Case Study in
- * Computing Word Co-occurrence Matrices with MapReduce.</b> <i>Proceedings of the 2008 Conference
- * on Empirical Methods in Natural Language Processing (EMNLP 2008)</i>, pages 419-428.</blockquote>
- *
+ * 
+ * <blockquote>Jimmy Lin. <b>Scalable Language Processing Algorithms for the
+ * Masses: A Case Study in Computing Word Co-occurrence Matrices with
+ * MapReduce.</b> <i>Proceedings of the 2008 Conference on Empirical Methods in
+ * Natural Language Processing (EMNLP 2008)</i>, pages 419-428.</blockquote>
+ * 
  * @author Jimmy Lin
  */
 public class PairsPMI extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(PairsPMI.class);
+	private static final Logger LOG = Logger.getLogger(PairsPMI.class);
 
-  private static class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
-    private static final PairOfStrings PAIR = new PairOfStrings();
-    private static final IntWritable ONE = new IntWritable(1);
-    private int window = 2;
+	private static class MyMapper extends
+			Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
+		private static final PairOfStrings PAIR = new PairOfStrings();
+		private static final IntWritable ONE = new IntWritable(1);
+		private int window = 2;
 
-    @Override
-    public void setup(Context context) {
-      window = context.getConfiguration().getInt("window", 2);
-    }
+		@Override
+		public void setup(Context context) {
+			// This will grab with in a two word proximity
+			window = context.getConfiguration().getInt("window", 2);
+		}
 
-    @Override
-    public void map(LongWritable key, Text line, Context context)
-        throws IOException, InterruptedException {
-      String text = line.toString();
+		@Override
+		public void map(LongWritable key, Text line, Context context)
+				throws IOException, InterruptedException {
+			String text = line.toString();
 
-      String[] terms = text.split("\\s+");
+			// Tokenize terms in document
+			String[] terms = text.split("\\s+");
 
-      for (int i = 0; i < terms.length; i++) {
-        String term = terms[i];
+			// Iterate through each term in the document
+			for (int i = 0; i < terms.length; i++) {
 
-        // skip empty tokens
-        if (term.length() == 0)
-          continue;
+				// Select a term in the document
+				String term = terms[i];
 
-        for (int j = i - window; j < i + window + 1; j++) {
-          if (j == i || j < 0)
-            continue;
+				// skip empty tokens
+				if (term.length() == 0)
+					continue;
 
-          if (j >= terms.length)
-            break;
+				// For each term in neighbors(w)
+				for (int j = i - window; j < i + window + 1; j++) {
+					if (j == i || j < 0)
+						continue;
 
-          // skip empty tokens
-          if (terms[j].length() == 0)
-            continue;
+					if (j >= terms.length)
+						break;
 
-          PAIR.set(term, terms[j]);
-          context.write(PAIR, ONE);
-        }
-      }
-    }
-  }
+					// skip empty tokens
+					if (terms[j].length() == 0)
+						continue;
 
-  private static class MyReducer extends
-      Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
-    private final static IntWritable SUM = new IntWritable();
+					// Emit the term and the
+					PAIR.set(term, terms[j]);
+					context.write(PAIR, ONE);
+				}
+			}
+		}
+	}
 
-    @Override
-    public void reduce(PairOfStrings key, Iterable<IntWritable> values, Context context)
-        throws IOException, InterruptedException {
-      Iterator<IntWritable> iter = values.iterator();
-      int sum = 0;
-      while (iter.hasNext()) {
-        sum += iter.next().get();
-      }
+	private static class MyCombiner extends
+			Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
+		private final static IntWritable SUM = new IntWritable();
 
-      SUM.set(sum);
-      context.write(key, SUM);
-    }
-  }
+		@Override
+		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
+				Context context) throws IOException, InterruptedException {
+			Iterator<IntWritable> iter = values.iterator();
+			int sum = 0;
+			while (iter.hasNext()) {
+				sum += iter.next().get();
+			}			
+		      SUM.set(sum);
+		      context.write(key, SUM);
+		}
+	}
 
-  protected static class MyPartitioner extends Partitioner<PairOfStrings, IntWritable> {
-    @Override
-    public int getPartition(PairOfStrings key, IntWritable value, int numReduceTasks) {
-      return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
-    }
-  }
+	private static class MyReducer extends
+			Reducer<PairOfStrings, IntWritable, PairOfStrings, FloatWritable> {		
+		private static final FloatWritable VALUE = new FloatWritable();
+		private float marginal = 0.0f;
+		
+		@Override
+		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
+				Context context) throws IOException, InterruptedException {
+			Iterator<IntWritable> iter = values.iterator();
+			int sum = 0;
+			while (iter.hasNext()) {
+				sum += iter.next().get();
+			}
 
-  /**
-   * Creates an instance of this tool.
-   */
-  public PairsPMI() {}
+			if (key.getRightElement().equals("*")) {
+				VALUE.set(sum);
+				context.write(key, VALUE);
+				marginal = sum;
+			} else {
+				VALUE.set(sum / marginal);
+				context.write(key, VALUE);
+			}			
+		}
+	}
 
-  private static final String INPUT = "input";
-  private static final String OUTPUT = "output";
-  private static final String WINDOW = "window";
-  private static final String NUM_REDUCERS = "numReducers";
+	protected static class MyPartitioner extends
+			Partitioner<PairOfStrings, IntWritable> {
+		@Override
+		public int getPartition(PairOfStrings key, IntWritable value,
+				int numReduceTasks) {
+			return (key.getLeftElement().hashCode() & Integer.MAX_VALUE)
+					% numReduceTasks;
+		}
+	}
 
-  /**
-   * Runs this tool.
-   */
-  @SuppressWarnings({ "static-access" })
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
+	/**
+	 * Creates an instance of this tool.
+	 */
+	public PairsPMI() {
+	}
 
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INPUT));
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("output path").create(OUTPUT));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("window size").create(WINDOW));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("number of reducers").create(NUM_REDUCERS));
+	private static final String INPUT = "input";
+	private static final String OUTPUT = "output";
+	private static final String WINDOW = "window";
+	private static final String NUM_REDUCERS = "numReducers";
 
-    CommandLine cmdline;
-    CommandLineParser parser = new GnuParser();
+	/**
+	 * Runs this tool.
+	 */
+	@SuppressWarnings({ "static-access" })
+	public int run(String[] args) throws Exception {
+		Options options = new Options();
 
-    try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
-      return -1;
-    }
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("input path").create(INPUT));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("output path").create(OUTPUT));
+		options.addOption(OptionBuilder.withArgName("num").hasArg()
+				.withDescription("window size").create(WINDOW));
+		options.addOption(OptionBuilder.withArgName("num").hasArg()
+				.withDescription("number of reducers").create(NUM_REDUCERS));
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
-      System.out.println("args: " + Arrays.toString(args));
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setWidth(120);
-      formatter.printHelp(this.getClass().getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      return -1;
-    }
+		CommandLine cmdline;
+		CommandLineParser parser = new GnuParser();
 
-    String inputPath = cmdline.getOptionValue(INPUT);
-    String outputPath = cmdline.getOptionValue(OUTPUT);
-    int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
-        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
-    int window = cmdline.hasOption(WINDOW) ? Integer.parseInt(cmdline.getOptionValue(WINDOW)) : 2;
+		try {
+			cmdline = parser.parse(options, args);
+		} catch (ParseException exp) {
+			System.err.println("Error parsing command line: "
+					+ exp.getMessage());
+			return -1;
+		}
 
-    LOG.info("Tool: " + PairsPMI.class.getSimpleName());
-    LOG.info(" - input path: " + inputPath);
-    LOG.info(" - output path: " + outputPath);
-    LOG.info(" - window: " + window);
-    LOG.info(" - number of reducers: " + reduceTasks);
+		if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
+			System.out.println("args: " + Arrays.toString(args));
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.setWidth(120);
+			formatter.printHelp(this.getClass().getName(), options);
+			ToolRunner.printGenericCommandUsage(System.out);
+			return -1;
+		}
 
-    Job job = Job.getInstance(getConf());
-    job.setJobName(PairsPMI.class.getSimpleName());
-    job.setJarByClass(PairsPMI.class);
+		String inputPath = cmdline.getOptionValue(INPUT);
+		String outputPath = cmdline.getOptionValue(OUTPUT);
+		int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ? Integer
+				.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
+		int window = cmdline.hasOption(WINDOW) ? Integer.parseInt(cmdline
+				.getOptionValue(WINDOW)) : 2;
 
-    // Delete the output directory if it exists already.
-    Path outputDir = new Path(outputPath);
-    FileSystem.get(getConf()).delete(outputDir, true);
+		LOG.info("Tool: " + PairsPMI.class.getSimpleName());
+		LOG.info(" - input path: " + inputPath);
+		LOG.info(" - output path: " + outputPath);
+		LOG.info(" - window: " + window);
+		LOG.info(" - number of reducers: " + reduceTasks);
 
-    job.getConfiguration().setInt("window", window);
+		Job job = Job.getInstance(getConf());
+		job.setJobName(PairsPMI.class.getSimpleName());
+		job.setJarByClass(PairsPMI.class);
 
-    job.setNumReduceTasks(reduceTasks);
+		// Delete the output directory if it exists already.
+		Path outputDir = new Path(outputPath);
+		FileSystem.get(getConf()).delete(outputDir, true);
 
-    FileInputFormat.setInputPaths(job, new Path(inputPath));
-    FileOutputFormat.setOutputPath(job, new Path(outputPath));
+		job.getConfiguration().setInt("window", window);
 
-    job.setMapOutputKeyClass(PairOfStrings.class);
-    job.setMapOutputValueClass(IntWritable.class);
-    job.setOutputKeyClass(PairOfStrings.class);
-    job.setOutputValueClass(IntWritable.class);
+		job.setNumReduceTasks(reduceTasks);
 
-    job.setMapperClass(MyMapper.class);
-    job.setCombinerClass(MyReducer.class);
-    job.setReducerClass(MyReducer.class);
-    job.setPartitionerClass(MyPartitioner.class);
+		FileInputFormat.setInputPaths(job, new Path(inputPath));
+		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
-    long startTime = System.currentTimeMillis();
-    job.waitForCompletion(true);
-    System.out.println("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+		job.setMapOutputKeyClass(PairOfStrings.class);
+		job.setMapOutputValueClass(IntWritable.class);
+		job.setOutputKeyClass(PairOfStrings.class);
+		job.setOutputValueClass(FloatWritable.class);
 
-    return 0;
-  }
+		job.setMapperClass(MyMapper.class);
+		job.setCombinerClass(MyCombiner.class);
+		job.setReducerClass(MyReducer.class);
+		job.setPartitionerClass(MyPartitioner.class);
 
-  /**
-   * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
-   */
-  public static void main(String[] args) throws Exception {
-    ToolRunner.run(new PairsPMI(), args);
-  }
+		long startTime = System.currentTimeMillis();
+		job.waitForCompletion(true);
+		System.out.println("Job Finished in "
+				+ (System.currentTimeMillis() - startTime) / 1000.0
+				+ " seconds");
+
+		return 0;
+	}
+
+	/**
+	 * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
+	 */
+	public static void main(String[] args) throws Exception {
+		ToolRunner.run(new PairsPMI(), args);
+	}
 }
