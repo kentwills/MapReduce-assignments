@@ -92,53 +92,56 @@ public class inMapperStripes extends Configured implements Tool {
 
 				// skip empty tokens
 				if (term.length() == 0)
-					continue;
-			
-				flush(context, false, terms, i);
+					continue;				
+				// For each term in neighbors(w)
+				for (int j = i - window; j < i + window + 1; j++) {
+					if (j == i || j < 0)
+						continue;
+
+					if (j >= terms.length)
+						break;
+
+					// skip empty tokens
+					if (terms[j].length() == 0)
+						continue;
+
+					// Check to see if we already hashed and add to the hashed
+					// value
+					if (map.containsKey(terms[j])) {
+						map.increment(terms[j]);
+					}
+					// Create new hash
+					else {
+						map.put(terms[j], 1);
+					}
+
+					// do this for (term,*) calculation
+					if (map.containsKey("*")) {
+						map.increment("*");
+					}
+					// Create new hash
+					else {
+						map.put("*", 1);
+					}
+				}
 			}
+			flush(context, false);
 		}
 		
-		private void doEmit(String [] terms, int i, Context context)
+		private void doEmit(Context context)
 				throws IOException, InterruptedException {
 			
-			// For each term in neighbors(w)
-			for (int j = i - window; j < i + window + 1; j++) {
-				if (j == i || j < 0)
-					continue;
+			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map
+					.getEntriesSortedByKey();
 
-				if (j >= terms.length)
-					break;
-
-				// skip empty tokens
-				if (terms[j].length() == 0)
-					continue;
-
-				// Check to see if we already hashed and add to the hashed
-				// value
-				if (map.containsKey(terms[j])) {
-					map.increment(terms[j]);
+				for (int i = 0; i < data.length; i++) {
+					KEY.set(data[i].getKey());
+					context.write(KEY, map);
 				}
-				// Create new hash
-				else {
-					map.put(terms[j], 1);
-				}
-
-				// do this for (term,*) calculation
-				if (map.containsKey("*")) {
-					map.increment("*");
-				}
-				// Create new hash
-				else {
-					map.put("*", 1);
-				}
-			}
-
-			KEY.set(terms[i]);
-			context.write(KEY, map);
 			
 		}
 
-		private void flush(Context context, boolean force,String [] terms, int i) throws IOException,
+		private void flush(Context context, boolean force) throws IOException,
 				InterruptedException {
 			HMapSIW map = getMap();
 			if (!force) {
@@ -147,14 +150,14 @@ public class inMapperStripes extends Configured implements Tool {
 					return;
 			}
 
-			doEmit(terms, i, context);
+			doEmit(context);
 
 			map.clear(); // make sure to empty map
 		}
 
 		protected void cleanup(Context context) throws IOException,
 				InterruptedException {
-			flush(context, true, null, 0); // force flush no matter what at the end
+			flush(context, true); // force flush no matter what at the end
 		}
 
 		 public HMapSIW getMap() {
