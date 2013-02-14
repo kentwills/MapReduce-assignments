@@ -137,7 +137,7 @@ public class PairsPMI extends Configured implements Tool {
 			Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
 		private static final FloatWritable VALUE = new FloatWritable();
 		private float marginal = 0.0f;
-		private float totalWords = 10;
+		private float totalWords = 156215;
 
 		@Override
 		public void reduce(PairOfStrings key, Iterable<FloatWritable> values,

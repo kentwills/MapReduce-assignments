@@ -162,7 +162,7 @@ public class StripesPMI extends Configured implements Tool {
 			HMapSIW map = new HMapSIW();
 			float frequency = 0;
 			float sum = 0;
-			float totalWords = 10;
+			float totalWords = 156215;
 			String prev = key.toString(), cur = "";
 
 			while (iter.hasNext()) {
