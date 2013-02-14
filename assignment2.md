@@ -10,11 +10,19 @@ each implementation is about the expected length.</p>
 implementation (in your VM)? What is the running time of the complete
 stripes implementation (in your VM)?</p>
 
+Pairs:
+Stripes: 61.184 seconds
+
 <p><b>Question 2.</b> Now disable all combiners. What is the running
 time of the complete pairs implementation now? What is the running
 time of the complete stripes implementation?</p>
 
+Pairs:
+Stripes:
+
 <p><b>Question 3.</b> How many distinct PMI pairs did you extract?</p>
+
+1439667
 
 <p><b>Question 4.</b> What's the pair (x, y) with the highest PMI?
 Write a sentence or two to explain what it is and why it has such a

@@ -164,10 +164,9 @@ public class StripesPMI extends Configured implements Tool {
 			String prev = key.toString(), cur = "-";
 
 			while (iter.hasNext()) {
-
 				map.plus(iter.next());
-
 			}
+			
 			if(map.size()!=0){		
 			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map.getEntriesSortedByKey();
 			
@@ -176,7 +175,9 @@ public class StripesPMI extends Configured implements Tool {
 				cur = data[i].getKey();
 				try{
 					if(cur.equals("*"))
-					frequency = (float) map.get(cur) / map.get("*");
+						frequency = map.get("*");
+					else
+						frequency = (float) map.get(cur) / map.get("*");
 				}
 				catch(Exception e){LOG.debug("Error: Reducer:"+e);frequency=0;}
 				
