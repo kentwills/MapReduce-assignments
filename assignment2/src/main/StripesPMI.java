@@ -1,4 +1,3 @@
-
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -45,7 +44,6 @@ import org.apache.log4j.Logger;
 import cern.colt.Arrays;
 
 import edu.umd.cloud9.io.map.HMapSIW;
-
 
 /**
  * <p>
@@ -134,14 +132,31 @@ public class StripesPMI extends Configured implements Tool {
 		}
 	}
 
+	private static class MyCombiner extends
+			Reducer<Text, HMapSIW, Text, HMapSIW> {
+
+		@Override
+		public void reduce(Text key, Iterable<HMapSIW> values, Context context)
+				throws IOException, InterruptedException {
+
+			Iterator<HMapSIW> iter = values.iterator();
+			HMapSIW map = new HMapSIW();
+
+			while (iter.hasNext()) {
+
+				map.plus(iter.next());
+
+			}
+		}
+	}
+
 	private static class MyReducer extends
 			Reducer<Text, HMapSIW, Text, FloatWritable> {
 		private final static FloatWritable FREQ = new FloatWritable();
 		private final static Text BIGRAM = new Text();
 
 		@Override
-		public void reduce(Text key,
-				Iterable<HMapSIW> values, Context context)
+		public void reduce(Text key, Iterable<HMapSIW> values, Context context)
 				throws IOException, InterruptedException {
 
 			Iterator<HMapSIW> iter = values.iterator();
@@ -150,23 +165,22 @@ public class StripesPMI extends Configured implements Tool {
 			String prev = key.toString(), cur = "-";
 
 			while (iter.hasNext()) {
-				
-				map.plus(iter.next());	
-				
+
+				map.plus(iter.next());
+
 			}
-			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map.getEntriesSortedByKey();
-			
-			for(int i=0;i<data.length;i++){
-				cur=data[i].toString();
-				
-				frequency = (float)map.get(cur)/map.get("*");
+			edu.umd.cloud9.util.map.MapKI.Entry<String>[] data = map
+					.getEntriesSortedByKey();
+
+			for (int i = 0; i < data.length; i++) {
+				cur = data[i].toString();
+
+				frequency = (float) map.get(cur) / map.get("*");
 				BIGRAM.set(prev + "," + cur);
 				FREQ.set(frequency);
-
+				if(i==0)System.out.println(prev + "," + cur + "|"+ frequency);
 				context.write(BIGRAM, FREQ);
 			}
-			
-			
 
 		}
 	}
@@ -248,11 +262,11 @@ public class StripesPMI extends Configured implements Tool {
 
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(HMapSIW.class);
-		job.setOutputKeyClass(Text.class); 
-		//job.setOutputValueClass(FloatWritable.class);
+		job.setOutputKeyClass(Text.class);
+		// job.setOutputValueClass(FloatWritable.class);
 
 		job.setMapperClass(MyMapper.class);
-		//job.setCombinerClass(MyReducer.class);//
+		job.setCombinerClass(MyCombiner.class);//
 		job.setReducerClass(MyReducer.class);
 
 		long startTime = System.currentTimeMillis();
