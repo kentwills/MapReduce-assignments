@@ -47,3 +47,30 @@ It expected to see a huge performance gain in pairs because the amount of data s
 
 
 <p>Note, there is no question 6 and I attempted the inMapperStripes, <-- named as such.  Did not quite get there with it, but have the memory flushing constructed.</p>
+
+Grading
+=======
+
+Your `assignment2.md` is in the wrong location. Please remember to put
+in the specified location next time.
+
+I also wasn't able to get your code to compile: (-2)
+
+>compile:
+>    [javac] Compiling 5 source files to /home/cloudera/assignments/kentwills/assignment2/build
+>    [javac] /home/cloudera/assignments/kentwills/assignment2/src/main/history/StripesPMI.java:68: duplicate class: StripesPMI
+>    [javac] public class StripesPMI extends Configured implements Tool {
+>    [javac]        ^
+>    [javac] 1 error
+>
+>BUILD FAILED
+
+Your implementation doesn't seem correct---I don't think you're
+actually computing the PMI values, because the answers to Q3-Q5 aren't
+correct.
+
+-6 for Q3, Q4, Q5, -5 for pairs implementation, -5 for stripes implementation.
+
+Score: 17/35
+
+-Jimmy
