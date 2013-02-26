@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -52,7 +53,7 @@ import edu.umd.cloud9.util.pair.PairOfObjectInt;
 public class BuildInvertedIndexCompressed extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BuildInvertedIndexCompressed.class);
 
-  public static class MyMapper extends Mapper<LongWritable, Text, Text, PairOfVInts> {
+  public static class MyMapper extends Mapper<LongWritable, Text, Text, PairOfWritables<VIntWritable ,VIntWritable >> {
     private static final Text WORD = new Text();
     private static final Object2IntFrequencyDistribution<String> COUNTS =
         new Object2IntFrequencyDistributionEntry<String>();
@@ -81,36 +82,36 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     	  //get word
         WORD.set(e.getLeftElement());
         //write word, document number, and frequency in document
-        context.write(WORD, new PairOfVInts((int) docno.get(), e.getRightElement()));
+        context.write(WORD, new PairOfWritables<VIntWritable ,VIntWritable > (new VIntWritable((int) docno.get()),	new VIntWritable(e.getRightElement())));
       }
     }
   }
 
   private static class MyReducer extends
-      Reducer<Text, PairOfVInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>>> {
+      Reducer<Text, PairOfWritables<VIntWritable ,VIntWritable >, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfWritables<VIntWritable ,VIntWritable >>>> {
     private final static IntWritable DF = new IntWritable();
 
     @Override
-    public void reduce(Text key, Iterable<PairOfVInts> values, Context context)
+    public void reduce(Text key, Iterable<PairOfWritables<VIntWritable ,VIntWritable >> values, Context context)
         throws IOException, InterruptedException {
-      Iterator<PairOfVInts> iter = values.iterator();
-      ArrayListWritable<PairOfVInts> postings = new ArrayListWritable<PairOfVInts>();
+      Iterator<PairOfWritables<VIntWritable ,VIntWritable >> iter = values.iterator();
+      ArrayListWritable<PairOfWritables<VIntWritable ,VIntWritable >> postings = new ArrayListWritable<PairOfWritables<VIntWritable ,VIntWritable >>();
 
      
       int df = 0;
       while (iter.hasNext()) {
     	//Listing of documents and their individual frequencies
-        postings.add(iter.next().clone());
+        postings.add(iter.next());
         //Total sum in all documents, total document frequency
         df++;
       }
 
       // Sort the postings by docno ascending.
-      Collections.sort(postings);
+      //Collections.sort(postings);
 
       DF.set(df);
       context.write(key,
-          new PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>>(DF, postings));
+          new PairOfWritables<IntWritable, ArrayListWritable<PairOfWritables<VIntWritable ,VIntWritable >>>(DF, postings));
     }
   }
 
@@ -173,7 +174,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
     job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(PairOfVInts.class);
+    job.setMapOutputValueClass(PairOfWritables.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(PairOfWritables.class);
     job.setOutputFormatClass(MapFileOutputFormat.class);
