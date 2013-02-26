@@ -21,8 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.google.common.collect.Lists;
-
-import edu.umd.cloud9.io.pair.PairOfVInts;
 import edu.umd.cloud9.util.map.HMapII;
 import edu.umd.cloud9.util.map.MapII;
 
@@ -132,7 +130,7 @@ public class VInt2VIntFrequencyDistributionEntry implements VInt2VIntFrequencyDi
 	 */
 	public Iterator<PairOfVInts> iterator() {
 		return new Iterator<PairOfVInts>() {
-			private Iterator<MapII.Entry> iter = Int2IntFrequencyDistributionEntry.this.counts.entrySet().iterator();
+			private Iterator<MapII.Entry> iter = VInt2VIntFrequencyDistributionEntry.this.counts.entrySet().iterator();
 			private final PairOfVInts pair = new PairOfVInts();
 
 			@Override
