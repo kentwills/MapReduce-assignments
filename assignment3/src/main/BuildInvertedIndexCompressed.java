@@ -104,7 +104,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 	private static class MyReducer extends
 			Reducer<PairOfStringInt, IntWritable, Text, BytesWritable> {
-		// private final static IntWritable DF = new IntWritable();
 		private static BytesWritable POSTINGS = new BytesWritable();
 		private static String TPREV = null;
 		private final static Text TERM = new Text();
@@ -122,27 +121,31 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 				Context context) throws IOException, InterruptedException {
 			Iterator<IntWritable> iter = values.iterator();
 
-			if (TPREV != null && !TPREV.equals(key.getLeftElement())) {
-				POSTINGS.set(out.toByteArray(), 0, out.size());
-				TERM.set(key.getLeftElement());
-				context.write(TERM, POSTINGS);
-				reset();
-			}
+			while (iter.hasNext()) {
+				if (TPREV != null && !TPREV.equals(key.getLeftElement())) {
+					POSTINGS.set(out.toByteArray(), 0, out.size());
+					TERM.set(key.getLeftElement());
+					context.write(TERM, POSTINGS);
+					reset();
+				}
 
-			// Listing of documents and their individual frequencies
-			WritableUtils
-					.writeVInt((DataOutput) dataOut, key.getRightElement());
-			WritableUtils.writeVInt((DataOutput) dataOut, iter.next().get());
-			TPREV = key.getLeftElement().toString();
+				// Listing of documents and their individual frequencies
+				WritableUtils.writeVInt((DataOutput) dataOut,
+						key.getRightElement());
+				WritableUtils
+						.writeVInt((DataOutput) dataOut, iter.next().get());
+				TPREV = key.getLeftElement().toString();
+			}
 		}
-		
+
 		@Override
-		public void cleanup(Context context) throws IOException, InterruptedException {
-			POSTINGS.set(out.toByteArray(), 0, out.size());		
+		public void cleanup(Context context) throws IOException,
+				InterruptedException {
+			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);
 			context.write(TERM, POSTINGS);
 		}
-		
+
 		public void reset() throws IOException {
 			dataOut.close();
 			POSTINGS = new BytesWritable();
