@@ -1,5 +1,4 @@
 
-
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -36,6 +35,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -45,6 +45,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import edu.umd.cloud9.io.array.ArrayListWritable;
 import edu.umd.cloud9.io.pair.PairOfInts;
+import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistributionEntry;
 
@@ -112,7 +113,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 
 		reader.get(key, value);
 
-		ArrayListWritable<PairOfInts> postings = getArrayList(value);
+		ArrayListWritable<PairOfInts> postings =  getArrayList(value);
 		for (PairOfInts pair : postings) {
 			System.out.println(pair);
 			collection.seek(pair.getLeftElement());
@@ -168,18 +169,19 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 	public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw)
 			throws IOException {
 		byte[] bytes = bw.getBytes();
-		int DataCount = bytes.length/2;
+		int DataCount = bytes.length / 2;
 		ArrayListWritable<PairOfInts> PairList = new ArrayListWritable<PairOfInts>();
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		DataInputStream dataIn = new DataInputStream(in);
-		
-		//LAST is to account for gap compression
-		int DocID=0, DocF=0, LAST=0;
-		for(int i=0;i<DataCount;i++){
-			DocID = WritableUtils.readVInt(dataIn)+LAST;
+
+		// LAST is to account for gap compression
+		int DocID = 0, DocF = 0, LAST = 0;
+		for (int i = 0; i < DataCount; i++) {
+			DocID = WritableUtils.readVInt(dataIn) + LAST;
 			DocF = WritableUtils.readVInt(dataIn);
 			PairList.add(new PairOfInts(DocID, DocF));
-			LAST=DocID;
+			LAST = DocID;
+			System.out.println("["+DocID+" "+DocF+"] ");
 		}
 		return PairList;
 	}
@@ -188,7 +190,6 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 	 * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
 	 */
 	public static void main(String[] args) throws Exception {
-		ToolRunner.run(new LookupPostingsCompressed(), args);
+		ToolRunner.run(new LookupPostings(), args);
 	}
-
 }
