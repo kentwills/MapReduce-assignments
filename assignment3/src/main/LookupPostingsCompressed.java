@@ -1,4 +1,5 @@
 
+
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -15,8 +16,10 @@
  * permissions and limitations under the License.
  */
 
-
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
@@ -32,137 +35,160 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import edu.umd.cloud9.io.array.ArrayListWritable;
 import edu.umd.cloud9.io.pair.PairOfInts;
-import edu.umd.cloud9.io.pair.PairOfWritables;
-import edu.umd.cloud9.util.SortableEntries;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistributionEntry;
 
 public class LookupPostingsCompressed extends Configured implements Tool {
-  private static final String INDEX = "index";
-  private static final String COLLECTION = "collection";
+	private static final String INDEX = "index";
+	private static final String COLLECTION = "collection";
 
-  private LookupPostingsCompressed() {}
+	private LookupPostingsCompressed() {
+	}
 
-  /**
-   * Runs this tool.
-   */
-  @SuppressWarnings({ "static-access" })
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
+	/**
+	 * Runs this tool.
+	 */
+	@SuppressWarnings({ "static-access" })
+	public int run(String[] args) throws Exception {
+		Options options = new Options();
 
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INDEX));
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("output path").create(COLLECTION));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("input path").create(INDEX));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("output path").create(COLLECTION));
 
-    CommandLine cmdline = null;
-    CommandLineParser parser = new GnuParser();
+		CommandLine cmdline = null;
+		CommandLineParser parser = new GnuParser();
 
-    try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
-      System.exit(-1);
-    }
+		try {
+			cmdline = parser.parse(options, args);
+		} catch (ParseException exp) {
+			System.err.println("Error parsing command line: "
+					+ exp.getMessage());
+			System.exit(-1);
+		}
 
-    if (!cmdline.hasOption(INDEX) || !cmdline.hasOption(COLLECTION)) {
-      System.out.println("args: " + Arrays.toString(args));
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setWidth(120);
-      formatter.printHelp(LookupPostings.class.getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      System.exit(-1);
-    }
+		if (!cmdline.hasOption(INDEX) || !cmdline.hasOption(COLLECTION)) {
+			System.out.println("args: " + Arrays.toString(args));
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.setWidth(120);
+			formatter.printHelp(LookupPostings.class.getName(), options);
+			ToolRunner.printGenericCommandUsage(System.out);
+			System.exit(-1);
+		}
 
-    String indexPath = cmdline.getOptionValue(INDEX);
-    String collectionPath = cmdline.getOptionValue(COLLECTION);
+		String indexPath = cmdline.getOptionValue(INDEX);
+		String collectionPath = cmdline.getOptionValue(COLLECTION);
 
-    if (collectionPath.endsWith(".gz")) {
-      System.out.println("gzipped collection is not seekable: use compressed version!");
-      System.exit(-1);
-    }
+		if (collectionPath.endsWith(".gz")) {
+			System.out
+					.println("gzipped collection is not seekable: use compressed version!");
+			System.exit(-1);
+		}
 
-    Configuration config = new Configuration();
-    FileSystem fs = FileSystem.get(config);
-    MapFile.Reader reader = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), config);
+		Configuration config = new Configuration();
+		FileSystem fs = FileSystem.get(config);
+		MapFile.Reader reader = new MapFile.Reader(new Path(indexPath
+				+ "/part-r-00000"), config);
 
-    FSDataInputStream collection = fs.open(new Path(collectionPath));
-    BufferedReader d = new BufferedReader(new InputStreamReader(collection));
+		FSDataInputStream collection = fs.open(new Path(collectionPath));
+		BufferedReader d = new BufferedReader(new InputStreamReader(collection));
 
-    Text key = new Text();
-    PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>> value =
-        new PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>>();
+		Text key = new Text();
+		BytesWritable value = new BytesWritable();
 
-    System.out.println("Looking up postings for the term \"starcross'd\"");
-    key.set("starcross'd");
+		System.out.println("Looking up postings for the term \"starcross'd\"");
+		key.set("starcross'd");
 
-    reader.get(key, value);
+		reader.get(key, value);
 
-    ArrayListWritable<PairOfVInts> postings = value.getRightElement();
-    for (PairOfVInts pair : postings) {
-      System.out.println(pair);
-      collection.seek(pair.getLeftElement());
-      System.out.println(d.readLine());
-    }
+		ArrayListWritable<PairOfInts> postings = getArrayList(value);
+		for (PairOfInts pair : postings) {
+			System.out.println(pair);
+			collection.seek(pair.getLeftElement());
+			System.out.println(d.readLine());
+		}
 
-    key.set("gold");
-    reader.get(key, value);
-    System.out.println("Complete postings list for 'gold': " + value);
+		key.set("gold");
+		reader.get(key, value);
+		System.out.println("Complete postings list for 'gold': " + value);
 
-    VInt2VIntFrequencyDistribution goldHist = new VInt2VIntFrequencyDistributionEntry();
-    postings = value.getRightElement();
-    for (PairOfVInts pair : postings) {
-      goldHist.increment(pair.getRightElement());
-    }
+		Int2IntFrequencyDistribution goldHist = new Int2IntFrequencyDistributionEntry();
+		postings = getArrayList(value);
+		for (PairOfInts pair : postings) {
+			goldHist.increment(pair.getRightElement());
+		}
 
-    System.out.println("histogram of tf values for gold");
-    for (PairOfVInts pair : goldHist) {
-      System.out.println(pair.getLeftElement() + "\t" + pair.getRightElement());
-    }
+		System.out.println("histogram of tf values for gold");
+		for (PairOfInts pair : goldHist) {
+			System.out.println(pair.getLeftElement() + "\t"
+					+ pair.getRightElement());
+		}
 
-    key.set("silver");
-    reader.get(key, value);
-    System.out.println("Complete postings list for 'silver': " + value);
+		key.set("silver");
+		reader.get(key, value);
+		System.out.println("Complete postings list for 'silver': " + value);
 
-    VInt2VIntFrequencyDistribution silverHist = new VInt2VIntFrequencyDistributionEntry();
-    postings = value.getRightElement();
-    for (PairOfVInts pair : postings) {
-      silverHist.increment(pair.getRightElement());
-    }
+		Int2IntFrequencyDistribution silverHist = new Int2IntFrequencyDistributionEntry();
+		postings = getArrayList(value);
+		for (PairOfInts pair : postings) {
+			silverHist.increment(pair.getRightElement());
+		}
 
-    System.out.println("histogram of tf values for silver");
-    for (PairOfVInts pair : silverHist) {
-      System.out.println(pair.getLeftElement() + "\t" + pair.getRightElement());
-    }
+		System.out.println("histogram of tf values for silver");
+		for (PairOfInts pair : silverHist) {
+			System.out.println(pair.getLeftElement() + "\t"
+					+ pair.getRightElement());
+		}
 
-    key.set("bronze");
-    Writable w = reader.get(key, value);
+		key.set("bronze");
+		Writable w = reader.get(key, value);
 
-    if (w == null) {
-      System.out.println("the term bronze does not appear in the collection");
-    }
+		if (w == null) {
+			System.out
+					.println("the term bronze does not appear in the collection");
+		}
 
-    collection.close();
-    reader.close();
+		collection.close();
+		reader.close();
 
-    return 0;
-  }
+		return 0;
+	}
 
-  /**
-   * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
-   */
-  public static void main(String[] args) throws Exception {
-    ToolRunner.run(new LookupPostingsCompressed(), args);
-  }
-  
-  
+	public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw)
+			throws IOException {
+		byte[] bytes = bw.getBytes();
+		int DataCount = bytes.length/2;
+		ArrayListWritable<PairOfInts> PairList = new ArrayListWritable<PairOfInts>();
+		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+		DataInputStream dataIn = new DataInputStream(in);
+		
+		//LAST is to account for gap compression
+		int DocID=0, DocF=0, LAST=0;
+		for(int i=0;i<DataCount;i++){
+			DocID = WritableUtils.readVInt(dataIn)+LAST;
+			DocF = WritableUtils.readVInt(dataIn);
+			PairList.add(new PairOfInts(DocID, DocF));
+			LAST=DocID;
+		}
+		return PairList;
+	}
+
+	/**
+	 * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
+	 */
+	public static void main(String[] args) throws Exception {
+		ToolRunner.run(new LookupPostingsCompressed(), args);
+	}
+
 }
