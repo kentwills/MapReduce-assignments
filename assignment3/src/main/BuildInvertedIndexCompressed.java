@@ -144,13 +144,14 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);
 			context.write(TERM, POSTINGS);
+			dataOut.close();
 		}
 
 		public void reset() throws IOException {
 			dataOut.close();
 			POSTINGS = new BytesWritable();
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			DataOutputStream dataOut = new DataOutputStream(out);
+			out = new ByteArrayOutputStream();
+			dataOut = new DataOutputStream(out);
 		}
 
 	}
