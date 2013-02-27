@@ -125,8 +125,9 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 			while (iter.hasNext()) {
 				if (TPREV != null && !TPREV.equals(key.getLeftElement())) {
+					POSTINGS.setCapacity(out.size());
 					POSTINGS.set(out.toByteArray(), 0, out.size());
-					TERM.set(key.getLeftElement());
+					TERM.set(key.getLeftElement());					
 					context.write(TERM, POSTINGS);
 					reset();
 				}
@@ -144,6 +145,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 		@Override
 		public void cleanup(Context context) throws IOException,
 				InterruptedException {
+			POSTINGS.setCapacity(out.size());
 			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);			
 			context.write(TERM, POSTINGS);
