@@ -1,4 +1,5 @@
 
+
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -14,11 +15,10 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-
-
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 
 import org.apache.commons.cli.CommandLine;
@@ -28,14 +28,18 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -44,159 +48,198 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import edu.umd.cloud9.io.array.ArrayListWritable;
-import edu.umd.cloud9.io.pair.PairOfWritables;
+import edu.umd.cloud9.io.pair.PairOfStringInt;
+import edu.umd.cloud9.io.pair.PairOfStrings;
 import edu.umd.cloud9.util.fd.Object2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Object2IntFrequencyDistributionEntry;
 import edu.umd.cloud9.util.pair.PairOfObjectInt;
 
 public class BuildInvertedIndexCompressed extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(BuildInvertedIndexCompressed.class);
+	private static final Logger LOG = Logger
+			.getLogger(BuildInvertedIndexCompressed.class);
 
-  public static class MyMapper extends Mapper<LongWritable, Text, Text, PairOfVInts> {
-    private static final Text WORD = new Text();
-    private static final Object2IntFrequencyDistribution<String> COUNTS =
-        new Object2IntFrequencyDistributionEntry<String>();
+	public static class MyMapper extends
+			Mapper<LongWritable, Text, PairOfStringInt, IntWritable> {
+		private static final PairOfStringInt WORD_DOCN = new PairOfStringInt();
+		private static final IntWritable F = new IntWritable();
+		private static final Object2IntFrequencyDistribution<String> COUNTS = new Object2IntFrequencyDistributionEntry<String>();
 
-    @Override
-    public void map(LongWritable docno, Text doc, Context context)
-        throws IOException, InterruptedException {
-    	
-    	//Get text in document
-      String text = doc.toString();
-      COUNTS.clear();
+		@Override
+		public void map(LongWritable docno, Text doc, Context context)
+				throws IOException, InterruptedException {
 
-      String[] terms = text.split("\\s+");
+			// Get text in document
+			String text = doc.toString();
+			COUNTS.clear();
 
-      // First build a histogram of the terms.
-      for (String term : terms) {
-        if (term == null || term.length() == 0) {
-          continue;
-        }
+			String[] terms = text.split("\\s+");
 
-        COUNTS.increment(term);
-      }
+			// First build a histogram of the terms.
+			for (String term : terms) {
+				if (term == null || term.length() == 0) {
+					continue;
+				}
+				COUNTS.increment(term);
+			}
 
-      // Emit postings.
-      for (PairOfObjectInt<String> e : COUNTS) {
-    	  //get word
-        WORD.set(e.getLeftElement());
-        //write word, document number, and frequency in document
-        context.write(WORD, new PairOfVInts((int) docno.get(), e.getRightElement()));
-      }
-    }
-  }
+			// Emit postings.
+			for (PairOfObjectInt<String> e : COUNTS) {
+				// set word,doc number pair
+				WORD_DOCN.set(e.getLeftElement(), (int) docno.get());
+				F.set(e.getRightElement());
+				context.write(WORD_DOCN, F);
+			}
+		}
+	}
 
-  private static class MyReducer extends
-      Reducer<Text, PairOfVInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>>> {
-    private final static IntWritable DF = new IntWritable();
+	protected static class MyPartitioner extends
+			Partitioner<PairOfStrings, IntWritable> {
+		@Override
+		public int getPartition(PairOfStrings key, IntWritable value,
+				int numReduceTasks) {
+			return (key.getLeftElement().hashCode() & Integer.MAX_VALUE)
+					% numReduceTasks;
+		}
+	}
 
-    @Override
-    public void reduce(Text key, Iterable<PairOfVInts> values, Context context)
-        throws IOException, InterruptedException {
-      Iterator<PairOfVInts> iter = values.iterator();
-      ArrayListWritable<PairOfVInts> postings = new ArrayListWritable<PairOfVInts>();
+	private static class MyReducer extends
+			Reducer<PairOfStringInt, IntWritable, Text, BytesWritable> {
+		// private final static IntWritable DF = new IntWritable();
+		private static BytesWritable POSTINGS = new BytesWritable();
+		private static String TPREV = null;
+		private final static Text TERM = new Text();
+		private static ByteArrayOutputStream out = new ByteArrayOutputStream();
+		private static DataOutputStream dataOut = new DataOutputStream(out);
 
-     
-      int df = 0;
-      while (iter.hasNext()) {
-    	//Listing of documents and their individual frequencies
-        postings.add(iter.next().clone());
-        //Total sum in all documents, total document frequency
-        df++;
-      }
+		@Override
+		public void setup(Context context) throws IOException {
+			String TPREV = null;
+			POSTINGS = new BytesWritable();
+		}
 
-      // Sort the postings by docno ascending.
-      Collections.sort(postings);
+		@Override
+		public void reduce(PairOfStringInt key, Iterable<IntWritable> values,
+				Context context) throws IOException, InterruptedException {
+			Iterator<IntWritable> iter = values.iterator();
 
-      DF.set(df);
-      context.write(key,
-          new PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>>(DF, postings));
-    }
-  }
+			if (TPREV != null && !TPREV.equals(key.getLeftElement())) {
+				POSTINGS.set(out.toByteArray(), 0, out.size());
+				TERM.set(key.getLeftElement());
+				context.write(TERM, POSTINGS);
+				reset();
+			}
 
-  private BuildInvertedIndexCompressed() {}
+			// Listing of documents and their individual frequencies
+			WritableUtils
+					.writeVInt((DataOutput) dataOut, key.getRightElement());
+			WritableUtils.writeVInt((DataOutput) dataOut, iter.next().get());
+			TPREV = key.getLeftElement().toString();
+		}
+		
+		@Override
+		public void cleanup(Context context) throws IOException, InterruptedException {
+			POSTINGS.set(out.toByteArray(), 0, out.size());		
+			TERM.set(TPREV);
+			context.write(TERM, POSTINGS);
+		}
+		
+		public void reset() throws IOException {
+			dataOut.close();
+			POSTINGS = new BytesWritable();
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			DataOutputStream dataOut = new DataOutputStream(out);
+		}
 
-  private static final String INPUT = "input";
-  private static final String OUTPUT = "output";
-  private static final String NUM_REDUCERS = "numReducers";
+	}
 
-  /**
-   * Runs this tool.
-   */
-  @SuppressWarnings({ "static-access" })
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
+	private BuildInvertedIndexCompressed() {
+	}
 
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INPUT));
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("output path").create(OUTPUT));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("number of reducers").create(NUM_REDUCERS));
+	private static final String INPUT = "input";
+	private static final String OUTPUT = "output";
+	private static final String NUM_REDUCERS = "numReducers";
 
-    CommandLine cmdline;
-    CommandLineParser parser = new GnuParser();
+	/**
+	 * Runs this tool.
+	 */
+	@SuppressWarnings({ "static-access" })
+	public int run(String[] args) throws Exception {
+		Options options = new Options();
 
-    try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
-      return -1;
-    }
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("input path").create(INPUT));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("output path").create(OUTPUT));
+		options.addOption(OptionBuilder.withArgName("num").hasArg()
+				.withDescription("number of reducers").create(NUM_REDUCERS));
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
-      System.out.println("args: " + Arrays.toString(args));
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setWidth(120);
-      formatter.printHelp(this.getClass().getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      return -1;
-    }
+		CommandLine cmdline;
+		CommandLineParser parser = new GnuParser();
 
-    String inputPath = cmdline.getOptionValue(INPUT);
-    String outputPath = cmdline.getOptionValue(OUTPUT);
-    int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
-        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
+		try {
+			cmdline = parser.parse(options, args);
+		} catch (ParseException exp) {
+			System.err.println("Error parsing command line: "
+					+ exp.getMessage());
+			return -1;
+		}
 
-    LOG.info("Tool name: " + BuildInvertedIndexCompressed.class.getSimpleName());
-    LOG.info(" - input path: " + inputPath);
-    LOG.info(" - output path: " + outputPath);
-    LOG.info(" - num reducers: " + reduceTasks);
+		if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
+			System.out.println("args: " + Arrays.toString(args));
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.setWidth(120);
+			formatter.printHelp(this.getClass().getName(), options);
+			ToolRunner.printGenericCommandUsage(System.out);
+			return -1;
+		}
 
-    Job job = Job.getInstance(getConf());
-    job.setJobName(BuildInvertedIndexCompressed.class.getSimpleName());
-    job.setJarByClass(BuildInvertedIndexCompressed.class);
+		String inputPath = cmdline.getOptionValue(INPUT);
+		String outputPath = cmdline.getOptionValue(OUTPUT);
+		int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ? Integer
+				.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    job.setNumReduceTasks(reduceTasks);
+		LOG.info("Tool name: "
+				+ BuildInvertedIndexCompressed.class.getSimpleName());
+		LOG.info(" - input path: " + inputPath);
+		LOG.info(" - output path: " + outputPath);
+		LOG.info(" - num reducers: " + reduceTasks);
 
-    FileInputFormat.setInputPaths(job, new Path(inputPath));
-    FileOutputFormat.setOutputPath(job, new Path(outputPath));
+		Job job = Job.getInstance(getConf());
+		job.setJobName(BuildInvertedIndexCompressed.class.getSimpleName());
+		job.setJarByClass(BuildInvertedIndexCompressed.class);
 
-    job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(PairOfVInts.class);
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(PairOfWritables.class);
-    job.setOutputFormatClass(MapFileOutputFormat.class);
+		job.setNumReduceTasks(reduceTasks);
 
-    job.setMapperClass(MyMapper.class);
-    job.setReducerClass(MyReducer.class);
+		FileInputFormat.setInputPaths(job, new Path(inputPath));
+		FileOutputFormat.setOutputPath(job, new Path(outputPath));
 
-    // Delete the output directory if it exists already.
-    Path outputDir = new Path(outputPath);
-    FileSystem.get(getConf()).delete(outputDir, true);
+		job.setMapOutputKeyClass(PairOfStringInt.class);
+		job.setMapOutputValueClass(IntWritable.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(BytesWritable.class);
+		job.setOutputFormatClass(MapFileOutputFormat.class);
 
-    long startTime = System.currentTimeMillis();
-    job.waitForCompletion(true);
-    System.out.println("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+		job.setMapperClass(MyMapper.class);
+		job.setReducerClass(MyReducer.class);
+		job.setPartitionerClass(MyPartitioner.class);
 
-    return 0;
-  }
+		// Delete the output directory if it exists already.
+		Path outputDir = new Path(outputPath);
+		FileSystem.get(getConf()).delete(outputDir, true);
 
-  /**
-   * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
-   */
-  public static void main(String[] args) throws Exception {
-    ToolRunner.run(new BuildInvertedIndexCompressed(), args);
-  }
+		long startTime = System.currentTimeMillis();
+		job.waitForCompletion(true);
+		System.out.println("Job Finished in "
+				+ (System.currentTimeMillis() - startTime) / 1000.0
+				+ " seconds");
+
+		return 0;
+	}
+
+	/**
+	 * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
+	 */
+	public static void main(String[] args) throws Exception {
+		ToolRunner.run(new BuildInvertedIndexCompressed(), args);
+	}
 }
