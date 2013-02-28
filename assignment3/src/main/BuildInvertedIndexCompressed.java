@@ -104,7 +104,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 	private static class MyReducer extends
 			Reducer<PairOfStringInt, IntWritable, Text, BytesWritable> {
-		private final static BytesWritable POSTINGS = new BytesWritable();
+		private static BytesWritable POSTINGS = new BytesWritable();
 		public static int DOCPREV = 0;
 		private static String TPREV = null;
 		private final static Text TERM = new Text();
