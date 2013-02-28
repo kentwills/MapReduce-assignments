@@ -116,7 +116,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 		public void setup(Context context) throws IOException {
 			TPREV = null;
 			DOCPREV = 0;
-			POSTINGS = new BytesWritable();
 		}
 
 		@Override
@@ -129,7 +128,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 					POSTINGS.setSize(out.size());					
 					POSTINGS.set(out.toByteArray(), 0, out.size());
 					TERM.set(TPREV);
-					context.write(TERM, new BytesWritable(out.toByteArray()));					
+					context.write(TERM, POSTINGS);					
 					reset();
 				}
 
@@ -150,17 +149,12 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 			POSTINGS.setSize(out.size());
 			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);
-			context.write(TERM, new BytesWritable(out.toByteArray()));			
+			context.write(TERM, POSTINGS);			
 			dataOut.close();
 		}
 
 		public void reset() throws IOException {
-			dataOut.close();
-			POSTINGS = new BytesWritable();			
-			//out = new ByteArrayOutputStream();
 			out.reset();
-			
-			//dataOut = new DataOutputStream(out);
 			DOCPREV = 0;
 		}
 

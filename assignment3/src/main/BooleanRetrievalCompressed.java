@@ -150,7 +150,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 			// LAST is to account for gap compression
 			int DocID = 0, DocF = 0, LAST = 0;
 			while (true) {
-				DocID = WritableUtils.readVInt(dataIn) ;//+ LAST;
+				DocID = WritableUtils.readVInt(dataIn) + LAST;
 				DocF = WritableUtils.readVInt(dataIn);
 				PairList.add(new PairOfInts(DocID, DocF));
 				LAST = DocID;
