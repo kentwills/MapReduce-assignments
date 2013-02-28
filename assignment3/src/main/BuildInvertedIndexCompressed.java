@@ -128,7 +128,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 					POSTINGS.setSize(out.size());					
 					POSTINGS.set(out.toByteArray(), 0, out.size());
 					TERM.set(key.getLeftElement());
-					context.write(TERM, POSTINGS);					
+					context.write(TERM, new BytesWritable(out.toByteArray()));					
 					reset();
 				}
 
@@ -148,7 +148,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 			POSTINGS.setSize(out.size());
 			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);
-			context.write(TERM, POSTINGS);			
+			context.write(TERM, new BytesWritable(out.toByteArray()));			
 			dataOut.close();
 		}
 
