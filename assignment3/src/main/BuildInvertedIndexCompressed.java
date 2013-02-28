@@ -231,7 +231,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 		job.setMapperClass(MyMapper.class);
 		job.setReducerClass(MyReducer.class);
-		job.setPartitionerClass(MyPartitioner.class);
+		//job.setPartitionerClass(MyPartitioner.class);
 
 		// Delete the output directory if it exists already.
 		Path outputDir = new Path(outputPath);
