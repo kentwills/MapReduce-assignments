@@ -1,4 +1,5 @@
 
+
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -22,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
+import man.LookupPostings;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -35,7 +38,6 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -45,7 +47,6 @@ import org.apache.hadoop.util.ToolRunner;
 
 import edu.umd.cloud9.io.array.ArrayListWritable;
 import edu.umd.cloud9.io.pair.PairOfInts;
-import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistributionEntry;
 
@@ -113,7 +114,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 
 		reader.get(key, value);
 
-		ArrayListWritable<PairOfInts> postings =  getArrayList(value);
+		ArrayListWritable<PairOfInts> postings = getArrayList(value);
 		for (PairOfInts pair : postings) {
 			System.out.println(pair);
 			collection.seek(pair.getLeftElement());
@@ -166,23 +167,26 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 		return 0;
 	}
 
-	public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw)
-			throws IOException {
+	public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw) {
 		byte[] bytes = bw.getBytes();
-		int DataCount = bytes.length / 2;
+		//int DataCount = bytes.length / 2;
 		ArrayListWritable<PairOfInts> PairList = new ArrayListWritable<PairOfInts>();
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		DataInputStream dataIn = new DataInputStream(in);
 
-		// LAST is to account for gap compression
-		int DocID = 0, DocF = 0, LAST = 0;
-		for (int i = 0; i < DataCount; i++) {
-			DocID = WritableUtils.readVInt(dataIn) + LAST;
-			DocF = WritableUtils.readVInt(dataIn);
-			PairList.add(new PairOfInts(DocID, DocF));
-			LAST = DocID;
-			System.out.println("["+DocID+" "+DocF+"] ");
+		try {
+			// LAST is to account for gap compression
+			int DocID = 0, DocF = 0, LAST = 0;
+			while (true) {
+				DocID = WritableUtils.readVInt(dataIn) + LAST;
+				DocF = WritableUtils.readVInt(dataIn);
+				PairList.add(new PairOfInts(DocID, DocF));
+				LAST = DocID;
+				System.out.println("[" + DocID + " " + DocF + "] ");
+			}
+		} catch (Exception e) {
 		}
+
 		return PairList;
 	}
 
@@ -190,6 +194,6 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 	 * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
 	 */
 	public static void main(String[] args) throws Exception {
-		ToolRunner.run(new LookupPostings(), args);
+		ToolRunner.run(new LookupPostingsCompressed(), args);
 	}
 }
