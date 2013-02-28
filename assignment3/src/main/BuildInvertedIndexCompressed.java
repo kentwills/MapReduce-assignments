@@ -128,7 +128,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 				if (TPREV != null && !TPREV.equals(key.getLeftElement())) {
 					POSTINGS.setSize(out.size());					
 					POSTINGS.set(out.toByteArray(), 0, out.size());
-					TERM.set(key.getLeftElement());
+					TERM.set(TPREV);
 					context.write(TERM, new BytesWritable(out.toByteArray()));					
 					reset();
 				}
