@@ -167,7 +167,6 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 
 	public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw) {
 		byte[] bytes = bw.getBytes();
-		//int DataCount = bytes.length / 2;
 		ArrayListWritable<PairOfInts> PairList = new ArrayListWritable<PairOfInts>();
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		DataInputStream dataIn = new DataInputStream(in);
@@ -180,7 +179,9 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 				DocF = WritableUtils.readVInt(dataIn);
 				PairList.add(new PairOfInts(DocID, DocF));
 				LAST = DocID;
-				System.out.println("[" + DocID + " " + DocF + "] ");
+				//System.out.println("[" + DocID + " " + DocF + "] ");
+				if (DocID==0&&DocF==0)
+					return PairList;
 			}
 		} catch (Exception e) {
 		}

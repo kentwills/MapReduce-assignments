@@ -154,7 +154,9 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 				DocF = WritableUtils.readVInt(dataIn);
 				PairList.add(new PairOfInts(DocID, DocF));
 				LAST = DocID;
-				System.out.println("[" + DocID + " " + DocF + "] ");
+				//System.out.println("[" + DocID + " " + DocF + "] ");
+				if (DocID==0&&DocF==0)
+					return PairList;
 			}
 		} catch (Exception e) {
 		}
