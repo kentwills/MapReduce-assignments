@@ -17,6 +17,8 @@
 
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
@@ -36,13 +38,16 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import edu.umd.cloud9.io.array.ArrayListWritable;
+import edu.umd.cloud9.io.pair.PairOfInts;
 import edu.umd.cloud9.io.pair.PairOfWritables;
 
 public class BooleanRetrievalCompressed extends Configured implements Tool {
@@ -118,23 +123,44 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
   private Set<Integer> fetchDocumentSet(String term) throws IOException {
     Set<Integer> set = new TreeSet<Integer>();
 
-    for (PairOfVInts pair : fetchPostings(term)) {
+    for (PairOfInts pair : fetchPostings(term)) {
       set.add(pair.getLeftElement());
     }
 
     return set;
   }
 
-  private ArrayListWritable<PairOfVInts> fetchPostings(String term) throws IOException {
+  private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
     Text key = new Text();
-    PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>> value =
-        new PairOfWritables<IntWritable, ArrayListWritable<PairOfVInts>>();
+    BytesWritable value = new BytesWritable();
 
     key.set(term);
     index.get(key, value);
 
-    return value.getRightElement();
+    return getArrayList(value);
   }
+  
+  public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw) {
+		byte[] bytes = bw.getBytes();
+		ArrayListWritable<PairOfInts> PairList = new ArrayListWritable<PairOfInts>();
+		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+		DataInputStream dataIn = new DataInputStream(in);
+
+		try {
+			// LAST is to account for gap compression
+			int DocID = 0, DocF = 0, LAST = 0;
+			while (true) {
+				DocID = WritableUtils.readVInt(dataIn) ;//+ LAST;
+				DocF = WritableUtils.readVInt(dataIn);
+				PairList.add(new PairOfInts(DocID, DocF));
+				LAST = DocID;
+				System.out.println("[" + DocID + " " + DocF + "] ");
+			}
+		} catch (Exception e) {
+		}
+
+		return PairList;
+	}
 
   private String fetchLine(long offset) throws IOException {
     collection.seek(offset);
