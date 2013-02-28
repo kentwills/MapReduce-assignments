@@ -48,6 +48,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
+import org.mortbay.log.Log;
 
 import edu.umd.cloud9.io.pair.PairOfStringInt;
 import edu.umd.cloud9.io.pair.PairOfStrings;
@@ -128,13 +129,14 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 					POSTINGS.setSize(out.size());					
 					POSTINGS.set(out.toByteArray(), 0, out.size());
 					TERM.set(TPREV);
-					context.write(TERM, POSTINGS);					
+					context.write(TERM, new BytesWritable(out.toByteArray()));					
 					reset();
 				}
 
 				// Listing of documents and their individual frequencies
 				WritableUtils.writeVInt((DataOutput) dataOut,
 						key.getRightElement() - DOCPREV);
+				dataOut.flush();
 				WritableUtils
 						.writeVInt((DataOutput) dataOut, iter.next().get());
 				dataOut.flush();
@@ -149,8 +151,9 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 			POSTINGS.setSize(out.size());
 			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);
-			context.write(TERM, POSTINGS);			
+			context.write(TERM,  new BytesWritable(out.toByteArray()));			
 			dataOut.close();
+			out.close();
 		}
 
 		public void reset() throws IOException {
