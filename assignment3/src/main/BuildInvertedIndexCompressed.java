@@ -108,8 +108,8 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 		public static int DOCPREV = 0;
 		private static String TPREV = null;
 		private final static Text TERM = new Text();
-		private final static ByteArrayOutputStream out = new ByteArrayOutputStream();
-		private final static DataOutputStream dataOut = new DataOutputStream(out);		
+		private static ByteArrayOutputStream out = new ByteArrayOutputStream();
+		private static DataOutputStream dataOut = new DataOutputStream(out);		
 
 		@Override
 		public void setup(Context context) throws IOException {
