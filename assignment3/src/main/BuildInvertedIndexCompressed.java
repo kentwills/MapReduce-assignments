@@ -104,18 +104,18 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 	private static class MyReducer extends
 			Reducer<PairOfStringInt, IntWritable, Text, BytesWritable> {
-		private static BytesWritable POSTINGS = new BytesWritable();
+		private final static BytesWritable POSTINGS = new BytesWritable();
 		public static int DOCPREV = 0;
 		private static String TPREV = null;
 		private final static Text TERM = new Text();
-		private static ByteArrayOutputStream out = new ByteArrayOutputStream();
-		private static DataOutputStream dataOut = new DataOutputStream(out);
+		private final static ByteArrayOutputStream out = new ByteArrayOutputStream();
+		private final static DataOutputStream dataOut = new DataOutputStream(out);		
 
 		@Override
 		public void setup(Context context) throws IOException {
-			TPREV = null;
+			//TPREV = null;
 			//DOCPREV = 0;
-			POSTINGS = new BytesWritable();
+			//POSTINGS = new BytesWritable();
 		}
 
 		@Override
@@ -128,17 +128,17 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 					POSTINGS.setCapacity(out.size());
 					POSTINGS.set(out.toByteArray(), 0, out.size());
 					TERM.set(key.getLeftElement());
-					context.write(TERM, POSTINGS);
+					context.write(TERM, POSTINGS);					
 					reset();
 				}
 
 				// Listing of documents and their individual frequencies
 				WritableUtils.writeVInt((DataOutput) dataOut,
-						key.getRightElement());// - DOCPREV);
+						key.getRightElement() - DOCPREV);
 				WritableUtils
 						.writeVInt((DataOutput) dataOut, iter.next().get());
 				TPREV = key.getLeftElement().toString();
-				//DOCPREV = (int) key.getRightElement();
+				DOCPREV = (int) key.getRightElement();				
 			}
 		}
 
@@ -148,13 +148,13 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 			POSTINGS.setCapacity(out.size());
 			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);
-			context.write(TERM, POSTINGS);
+			context.write(TERM, POSTINGS);			
 			dataOut.close();
 		}
 
 		public void reset() throws IOException {
-			dataOut.close();
-			POSTINGS = new BytesWritable();
+			//dataOut.close();
+			//POSTINGS = new BytesWritable();
 			out = new ByteArrayOutputStream();
 			dataOut = new DataOutputStream(out);
 			//DOCPREV = 0;
