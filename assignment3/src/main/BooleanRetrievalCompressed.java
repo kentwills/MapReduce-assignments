@@ -132,7 +132,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
   private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
     Text key = new Text();
-    BytesWritable value = new BytesWritable();
+    PairOfWritables<IntWritable,BytesWritable> value = new PairOfWritables<IntWritable,BytesWritable>();
 
     key.set(term);
     index.get(key, value);
@@ -140,8 +140,9 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     return getArrayList(value);
   }
   
-  public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw) {
-		byte[] bytes = bw.getBytes();
+	public ArrayListWritable<PairOfInts> getArrayList(PairOfWritables<IntWritable,BytesWritable> PW) {
+		byte[] bytes = PW.getRightElement().getBytes();
+		int length = PW.getLeftElement().get();
 		ArrayListWritable<PairOfInts> PairList = new ArrayListWritable<PairOfInts>();
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		DataInputStream dataIn = new DataInputStream(in);
@@ -149,7 +150,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 		try {
 			// LAST is to account for gap compression
 			int DocID = 0, DocF = 0, LAST = 0;
-			while (true) {
+			for (int i=0;i<length;i++){
 				DocID = WritableUtils.readVInt(dataIn) + LAST;
 				DocF = WritableUtils.readVInt(dataIn);
 				PairList.add(new PairOfInts(DocID, DocF));
