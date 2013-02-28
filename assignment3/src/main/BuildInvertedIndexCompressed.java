@@ -52,6 +52,7 @@ import org.mortbay.log.Log;
 
 import edu.umd.cloud9.io.pair.PairOfStringInt;
 import edu.umd.cloud9.io.pair.PairOfStrings;
+import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.util.fd.Object2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Object2IntFrequencyDistributionEntry;
 import edu.umd.cloud9.util.pair.PairOfObjectInt;
@@ -105,9 +106,11 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 	}
 
 	private static class MyReducer extends
-			Reducer<PairOfStringInt, IntWritable, Text, BytesWritable> {
+			Reducer<PairOfStringInt, IntWritable, Text, PairOfWritables<IntWritable,BytesWritable>> {
+		private static final PairOfWritables<IntWritable,BytesWritable> OUTPUT = new PairOfWritables<IntWritable,BytesWritable>();
 		private static BytesWritable POSTINGS = new BytesWritable();
 		public static int DOCPREV = 0;
+		public static int DOCFREQ = 0;
 		private static String TPREV = null;
 		private final static Text TERM = new Text();
 		private static ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -129,7 +132,8 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 					POSTINGS.setSize(out.size());					
 					POSTINGS.set(out.toByteArray(), 0, out.size());
 					TERM.set(TPREV);
-					context.write(TERM, new BytesWritable(out.toByteArray()));					
+					OUTPUT.set(new IntWritable(DOCFREQ), new BytesWritable(out.toByteArray()));
+					context.write(TERM, OUTPUT);					
 					reset();
 				}
 
@@ -141,7 +145,8 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 						.writeVInt((DataOutput) dataOut, iter.next().get());
 				dataOut.flush();
 				TPREV = key.getLeftElement().toString();
-				DOCPREV = (int) key.getRightElement();				
+				DOCPREV = (int) key.getRightElement();
+				DOCFREQ++;
 			}
 		}
 
@@ -151,7 +156,9 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 			POSTINGS.setSize(out.size());
 			POSTINGS.set(out.toByteArray(), 0, out.size());
 			TERM.set(TPREV);
-			context.write(TERM,  new BytesWritable(out.toByteArray()));			
+			OUTPUT.set(new IntWritable(DOCFREQ), new BytesWritable(out.toByteArray()));
+			context.write(TERM, OUTPUT);
+			//context.write(TERM,  new BytesWritable(out.toByteArray()));			
 			dataOut.close();
 			out.close();
 		}
@@ -159,6 +166,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 		public void reset() throws IOException {
 			out.reset();
 			DOCPREV = 0;
+			DOCFREQ=0;
 		}
 
 	}

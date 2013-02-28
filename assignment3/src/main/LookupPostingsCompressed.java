@@ -36,6 +36,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -45,6 +46,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import edu.umd.cloud9.io.array.ArrayListWritable;
 import edu.umd.cloud9.io.pair.PairOfInts;
+import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistributionEntry;
 
@@ -105,7 +107,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 		BufferedReader d = new BufferedReader(new InputStreamReader(collection));
 
 		Text key = new Text();
-		BytesWritable value = new BytesWritable();
+		PairOfWritables<IntWritable,BytesWritable> value = new PairOfWritables<IntWritable,BytesWritable>();		
 
 		System.out.println("Looking up postings for the term \"starcross'd\"");
 		key.set("starcross'd");
@@ -165,8 +167,9 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 		return 0;
 	}
 
-	public ArrayListWritable<PairOfInts> getArrayList(BytesWritable bw) {
-		byte[] bytes = bw.getBytes();
+	public ArrayListWritable<PairOfInts> getArrayList(PairOfWritables<IntWritable,BytesWritable> PW) {
+		byte[] bytes = PW.getRightElement().getBytes();
+		int length = PW.getLeftElement().get();
 		ArrayListWritable<PairOfInts> PairList = new ArrayListWritable<PairOfInts>();
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		DataInputStream dataIn = new DataInputStream(in);
@@ -174,7 +177,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 		try {
 			// LAST is to account for gap compression
 			int DocID = 0, DocF = 0, LAST = 0;
-			while (true) {
+			for (int i=0;i<length;i++){
 				DocID = WritableUtils.readVInt(dataIn) + LAST;
 				DocF = WritableUtils.readVInt(dataIn);
 				PairList.add(new PairOfInts(DocID, DocF));
