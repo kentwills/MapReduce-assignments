@@ -84,7 +84,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 			System.out.println("args: " + Arrays.toString(args));
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.setWidth(120);
-			formatter.printHelp(LookupPostings.class.getName(), options);
+			formatter.printHelp(LookupPostingsCompressed.class.getName(), options);
 			ToolRunner.printGenericCommandUsage(System.out);
 			System.exit(-1);
 		}
