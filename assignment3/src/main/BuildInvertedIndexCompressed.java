@@ -138,6 +138,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 						key.getRightElement() - DOCPREV);
 				WritableUtils
 						.writeVInt((DataOutput) dataOut, iter.next().get());
+				dataOut.flush();
 				TPREV = key.getLeftElement().toString();
 				DOCPREV = (int) key.getRightElement();				
 			}
@@ -155,9 +156,11 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 		public void reset() throws IOException {
 			dataOut.close();
-			POSTINGS = new BytesWritable();
-			out = new ByteArrayOutputStream();
-			dataOut = new DataOutputStream(out);
+			POSTINGS = new BytesWritable();			
+			//out = new ByteArrayOutputStream();
+			out.reset();
+			
+			//dataOut = new DataOutputStream(out);
 			DOCPREV = 0;
 		}
 
