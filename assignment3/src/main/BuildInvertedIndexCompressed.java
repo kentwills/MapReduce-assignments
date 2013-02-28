@@ -93,9 +93,9 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 	}
 
 	protected static class MyPartitioner extends
-			Partitioner<PairOfStrings, IntWritable> {
+			Partitioner<PairOfStringInt, IntWritable> {
 		@Override
-		public int getPartition(PairOfStrings key, IntWritable value,
+		public int getPartition(PairOfStringInt key, IntWritable value,
 				int numReduceTasks) {
 			return (key.getLeftElement().hashCode() & Integer.MAX_VALUE)
 					% numReduceTasks;
