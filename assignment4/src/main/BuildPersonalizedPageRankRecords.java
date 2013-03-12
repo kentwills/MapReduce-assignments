@@ -1,4 +1,4 @@
-package man;
+
 /*
  * Cloud9: A MapReduce Library for Hadoop
  *
