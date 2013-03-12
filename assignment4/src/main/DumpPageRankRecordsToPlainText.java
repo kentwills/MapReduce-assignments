@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-
+import edu.umd.cloud9.io.array.ArrayListOfIntsWritable;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
