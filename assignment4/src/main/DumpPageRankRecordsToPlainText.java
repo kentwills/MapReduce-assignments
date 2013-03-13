@@ -61,7 +61,7 @@ public class DumpPageRankRecordsToPlainText extends Configured implements Tool {
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
 
     Job job = new Job(conf, "DumpPageRankRecordsToPlainText");
-    job.setJarByClass(FindMaxPageRankNodes.class);
+    job.setJarByClass(ExtractTopPersonalizedPageRankNodes.class);
 
     job.setNumReduceTasks(0);
 
