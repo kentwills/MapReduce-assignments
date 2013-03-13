@@ -79,58 +79,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     nodes, edges, massMessages, massMessagesSaved, massMessagesReceived, missingStructure
   };
 
-  // Mapper, no in-mapper combining.
-  private static class MapClass extends
-      Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode> {
-
-    // The neighbor to which we're sending messages.
-    private static final IntWritable neighbor = new IntWritable();
-
-    // Contents of the messages: partial PageRank mass.
-    private static final PageRankNode intermediateMass = new PageRankNode();
-
-    // For passing along node structure.
-    private static final PageRankNode intermediateStructure = new PageRankNode();
-
-    @Override
-    public void map(IntWritable nid, PageRankNode node, Context context)
-        throws IOException, InterruptedException {
-      // Pass along node structure.
-      intermediateStructure.setNodeId(node.getNodeId());
-      intermediateStructure.setType(PageRankNode.Type.Structure);
-      intermediateStructure.setAdjacencyList(node.getAdjacenyList());
-
-      context.write(nid, intermediateStructure);
-
-      int massMessages = 0;
-
-      // Distribute PageRank mass to neighbors (along outgoing edges).
-      if (node.getAdjacenyList().size() > 0) {
-        // Each neighbor gets an equal share of PageRank mass.
-        ArrayListOfIntsWritable list = node.getAdjacenyList();
-        float mass = node.getPageRank() - (float) StrictMath.log(list.size());
-
-        context.getCounter(PageRank.edges).increment(list.size());
-
-        // Iterate over neighbors.
-        for (int i = 0; i < list.size(); i++) {
-          neighbor.set(list.get(i));
-          intermediateMass.setNodeId(list.get(i));
-          intermediateMass.setType(PageRankNode.Type.Mass);
-          intermediateMass.setPageRank(mass);
-
-          // Emit messages with PageRank mass to neighbors.
-          context.write(neighbor, intermediateMass);
-          massMessages++;
-        }
-      }
-
-      // Bookkeeping.
-      context.getCounter(PageRank.nodes).increment(1);
-      context.getCounter(PageRank.massMessages).increment(massMessages);
-    }
-  }
-
   // Mapper with in-mapper combiner optimization.
   private static class MapWithInMapperCombiningClass extends
       Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode> {
@@ -197,40 +145,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         mass.setPageRank(e.getValue());
 
         context.write(k, mass);
-      }
-    }
-  }
-
-  // Combiner: sums partial PageRank contributions and passes node structure along.
-  private static class CombineClass extends
-      Reducer<IntWritable, PageRankNode, IntWritable, PageRankNode> {
-    private static final PageRankNode intermediateMass = new PageRankNode();
-
-    @Override
-    public void reduce(IntWritable nid, Iterable<PageRankNode> values, Context context)
-        throws IOException, InterruptedException {
-      int massMessages = 0;
-
-      // Remember, PageRank mass is stored as a log prob.
-      float mass = Float.NEGATIVE_INFINITY;
-      for (PageRankNode n : values) {
-        if (n.getType() == PageRankNode.Type.Structure) {
-          // Simply pass along node structure.
-          context.write(nid, n);
-        } else {
-          // Accumulate PageRank mass contributions.
-          mass = sumLogProbs(mass, n.getPageRank());
-          massMessages++;
-        }
-      }
-
-      // Emit aggregated results.
-      if (massMessages > 0) {
-        intermediateMass.setNodeId(nid.get());
-        intermediateMass.setType(PageRankNode.Type.Mass);
-        intermediateMass.setPageRank(mass);
-
-        context.write(nid, intermediateMass);
       }
     }
   }
@@ -365,9 +279,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
   private static final String NUM_NODES = "numNodes";
   private static final String START = "start";
   private static final String END = "end";
-  private static final String COMBINER = "useCombiner";
-  private static final String INMAPPER_COMBINER = "useInMapperCombiner";
-  private static final String RANGE = "range";
 
   /**
    * Runs this tool.
@@ -375,11 +286,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
   @SuppressWarnings({ "static-access" })
   public int run(String[] args) throws Exception {
     Options options = new Options();
-
-    options.addOption(new Option(COMBINER, "use combiner"));
-    options.addOption(new Option(INMAPPER_COMBINER, "user in-mapper combiner"));
-    options.addOption(new Option(RANGE, "use range partitioner"));
-
     options.addOption(OptionBuilder.withArgName("path").hasArg()
         .withDescription("base path").create(BASE));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
@@ -413,34 +319,27 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		int n = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
 		int s = Integer.parseInt(cmdline.getOptionValue(START));
 		int e = Integer.parseInt(cmdline.getOptionValue(END));
-		boolean useCombiner = cmdline.hasOption(COMBINER);
-		boolean useInmapCombiner = cmdline.hasOption(INMAPPER_COMBINER);
-		boolean useRange = cmdline.hasOption(RANGE);
 
     LOG.info("Tool name: RunPersonalizedPageRankBasic");
     LOG.info(" - base path: " + basePath);
     LOG.info(" - num nodes: " + n);
     LOG.info(" - start iteration: " + s);
     LOG.info(" - end iteration: " + e);
-    LOG.info(" - use combiner: " + useCombiner);
-    LOG.info(" - use in-mapper combiner: " + useInmapCombiner);
-    LOG.info(" - user range partitioner: " + useRange);
 
     // Iterate PageRank.
     for (int i = s; i < e; i++) {
-      iteratePageRank(i, i + 1, basePath, n, useCombiner, useInmapCombiner);
+      iteratePageRank(i, i + 1, basePath, n);
     }
 
     return 0;
   }
 
   // Run each iteration.
-  private void iteratePageRank(int i, int j, String basePath, int numNodes,
-      boolean useCombiner, boolean useInMapperCombiner) throws Exception {
+  private void iteratePageRank(int i, int j, String basePath, int numNodes) throws Exception {
     // Each iteration consists of two phases (two MapReduce jobs).
 
     // Job 1: distribute PageRank mass along outgoing edges.
-    float mass = phase1(i, j, basePath, numNodes, useCombiner, useInMapperCombiner);
+    float mass = phase1(i, j, basePath, numNodes);
 
     // Find out how much PageRank mass got lost at the dangling nodes.
     float missing = 1.0f - (float) StrictMath.exp(mass);
@@ -449,8 +348,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     phase2(i, j, missing, basePath, numNodes);
   }
 
-  private float phase1(int i, int j, String basePath, int numNodes,
-      boolean useCombiner, boolean useInMapperCombiner) throws Exception {
+  private float phase1(int i, int j, String basePath, int numNodes) throws Exception {
     Job job = Job.getInstance(getConf());
     job.setJobName("PageRank:Basic:iteration" + j + ":Phase1");
     job.setJarByClass(RunPersonalizedPageRankBasic.class);
@@ -471,8 +369,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     LOG.info(" - input: " + in);
     LOG.info(" - output: " + out);
     LOG.info(" - nodeCnt: " + numNodes);
-    LOG.info(" - useCombiner: " + useCombiner);
-    LOG.info(" - useInmapCombiner: " + useInMapperCombiner);
     LOG.info("computed number of partitions: " + numPartitions);
 
     int numReduceTasks = numPartitions;
@@ -497,11 +393,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     job.setOutputKeyClass(IntWritable.class);
     job.setOutputValueClass(PageRankNode.class);
 
-    job.setMapperClass(useInMapperCombiner ? MapWithInMapperCombiningClass.class : MapClass.class);
-
-    if (useCombiner) {
-      job.setCombinerClass(CombineClass.class);
-    }
+    job.setMapperClass(MapWithInMapperCombiningClass.class);
 
     job.setReducerClass(ReduceClass.class);
 
