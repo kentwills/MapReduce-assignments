@@ -118,15 +118,19 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
 	 * Runs this tool.
 	 */
 	public int run(String[] args) throws Exception {
-		if (args.length != 3) {
-			printUsage();
-			return -1;
-		}
+		//if (args.length != 3) {
+		//	printUsage();
+		//	return -1;
+		//}
 
 		String inputPath = args[0];
 		String outputPath = args[1];
 		int n = Integer.parseInt(args[2]);
 
+		System.out.println(inputPath);
+		System.out.println(outputPath);
+		System.out.println(n);
+		
 		LOG.info("Tool name: BuildPageRankRecords");
 		LOG.info(" - inputDir: " + inputPath);
 		LOG.info(" - outputDir: " + outputPath);
