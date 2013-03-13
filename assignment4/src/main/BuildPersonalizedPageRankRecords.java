@@ -108,7 +108,8 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String NUM_NODES = "numNodes";
-
+  private static final String SOURCES="sources";
+  
   /**
    * Runs this tool.
    */
@@ -122,6 +123,8 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         .withDescription("output path").create(OUTPUT));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("number of nodes").create(NUM_NODES));
+    options.addOption(OptionBuilder.withArgName("path").hasArg()
+            .withDescription("sources").create(SOURCES));
 
     CommandLine cmdline;
     CommandLineParser parser = new GnuParser();
@@ -145,11 +148,13 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     String inputPath = cmdline.getOptionValue(INPUT);
     String outputPath = cmdline.getOptionValue(OUTPUT);
     int n = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
+    String [] sources = cmdline.getOptionValue(SOURCES).split(",");
 
     LOG.info("Tool name: " + BuildPersonalizedPageRankRecords.class.getSimpleName());
     LOG.info(" - inputDir: " + inputPath);
     LOG.info(" - outputDir: " + outputPath);
     LOG.info(" - numNodes: " + n);
+    LOG.info(" - sources: " + showSources(sources));
 
     Configuration conf = getConf();
     conf.setInt(NODE_CNT_FIELD, n);
@@ -183,6 +188,14 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     return 0;
   }
 
+  private String showSources(String [] sources){
+	  String concat="";
+	  for (String s :sources ){
+		  concat+=s+",";
+	  }
+	  return concat.substring(0, concat.length()-1);
+  }
+  
   /**
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
