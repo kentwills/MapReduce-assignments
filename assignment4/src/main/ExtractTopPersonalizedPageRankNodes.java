@@ -1,3 +1,4 @@
+package man;
 /*
  * Cloud9: A MapReduce Library for Hadoop
  *
@@ -39,8 +40,8 @@ import org.apache.log4j.Logger;
 import edu.umd.cloud9.util.TopNScoredObjects;
 import edu.umd.cloud9.util.pair.PairOfObjectFloat;
 
-public class FindMaxPageRankNodes extends Configured implements Tool {
-	private static final Logger LOG = Logger.getLogger(FindMaxPageRankNodes.class);
+public class ExtractTopPersonalizedPageRankNodes extends Configured implements Tool {
+	private static final Logger LOG = Logger.getLogger(ExtractTopPersonalizedPageRankNodes.class);
 
 	private static class MyMapper extends Mapper<IntWritable, PageRankNode, IntWritable, FloatWritable> {
     private TopNScoredObjects<Integer> queue;
@@ -108,7 +109,7 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
     }
 	}
 
-	public FindMaxPageRankNodes() {}
+	public ExtractTopPersonalizedPageRankNodes() {}
 
 	private static int printUsage() {
 		System.out.println("usage: [input] [output] [n]");
@@ -129,7 +130,7 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
 		String outputPath = args[1];
 		int n = Integer.parseInt(args[2]);
 		
-		LOG.info("Tool name: FindMaxPageRankNodes");
+		LOG.info("Tool name: ExtractTopPersonalizedPageRankNodes");
 		LOG.info(" - input: " + inputPath);
 		LOG.info(" - output: " + outputPath);
 		LOG.info(" - n: " + n);
@@ -138,8 +139,8 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
     conf.setInt("n", n);
 
-		Job job = new Job(conf, "FindMaxPageRankNodes");
-		job.setJarByClass(FindMaxPageRankNodes.class);
+		Job job = new Job(conf, "ExtractTopPersonalizedPageRankNodes");
+		job.setJarByClass(ExtractTopPersonalizedPageRankNodes.class);
 
 		job.setNumReduceTasks(1);
 
@@ -171,7 +172,7 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
 	 * <code>ToolRunner</code>.
 	 */
 	public static void main(String[] args) throws Exception {
-		int res = ToolRunner.run(new FindMaxPageRankNodes(), args);
+		int res = ToolRunner.run(new ExtractTopPersonalizedPageRankNodes(), args);
 		System.exit(res);
 	}
 }
