@@ -24,6 +24,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.collections15.Transformer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
@@ -56,10 +57,12 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
   private static final Logger LOG = Logger.getLogger(BuildPersonalizedPageRankRecords.class);
 
   private static final String NODE_CNT_FIELD = "node.cnt";
+  private static final String NODE_SRC_FIELD = "node.src";
 
   private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, PageRankNode> {
     private static final IntWritable nid = new IntWritable();
     private static final PageRankNode node = new PageRankNode();
+    private static String [] sources;
 
     @Override
     public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNode>.Context context) {
@@ -67,8 +70,15 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
+      
+      sources = context.getConfiguration().getStrings(NODE_CNT_FIELD)[0].split(",");
+      if(sources.length==0){
+    	  throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");  
+      }
+      
       node.setType(PageRankNode.Type.Complete);
-      node.setPageRank((float) -StrictMath.log(n));
+      
+ 
     }
 
     @Override
@@ -91,6 +101,13 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
 
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
       }
+      
+      if (Integer.toString(node.getNodeId())==sources[0]){
+  	  	LOG.info("Source"+sources[0]);
+  	  	node.setPageRank((float) 0);//Log(1)
+  	  }
+    else
+  	  node.setPageRank((float) Float.NEGATIVE_INFINITY);//(Log(0)     
 
       context.getCounter("graph", "numNodes").increment(1);
       context.getCounter("graph", "numEdges").increment(arr.length - 1);
@@ -148,16 +165,17 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     String inputPath = cmdline.getOptionValue(INPUT);
     String outputPath = cmdline.getOptionValue(OUTPUT);
     int n = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
-    String [] sources = cmdline.getOptionValue(SOURCES).split(",");
+    String sources = cmdline.getOptionValue(SOURCES);
 
     LOG.info("Tool name: " + BuildPersonalizedPageRankRecords.class.getSimpleName());
     LOG.info(" - inputDir: " + inputPath);
     LOG.info(" - outputDir: " + outputPath);
     LOG.info(" - numNodes: " + n);
-    LOG.info(" - sources: " + showSources(sources));
+    LOG.info(" - sources: " + sources);
 
     Configuration conf = getConf();
     conf.setInt(NODE_CNT_FIELD, n);
+    conf.setStrings(NODE_SRC_FIELD, sources);
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
 
     Job job = Job.getInstance(conf);
