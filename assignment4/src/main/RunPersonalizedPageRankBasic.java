@@ -73,7 +73,7 @@ import edu.umd.cloud9.util.map.MapIF;
  * @author Michael Schatz
  */
 public class RunPersonalizedPageRankBasic extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(RunPageRankBasic.class);
+  private static final Logger LOG = Logger.getLogger(RunPersonalizedPageRankBasic.class);
 
   private static enum PageRank {
     nodes, edges, massMessages, massMessagesSaved, massMessagesReceived, missingStructure
@@ -356,7 +356,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 	 * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
 	 */
 	public static void main(String[] args) throws Exception {
-		ToolRunner.run(new RunPageRankBasic(), args);
+		ToolRunner.run(new RunPersonalizedPageRankBasic(), args);
 	}
 
 	public RunPersonalizedPageRankBasic() {}
@@ -417,7 +417,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		boolean useInmapCombiner = cmdline.hasOption(INMAPPER_COMBINER);
 		boolean useRange = cmdline.hasOption(RANGE);
 
-    LOG.info("Tool name: RunPageRank");
+    LOG.info("Tool name: RunPersonalizedPageRankBasic");
     LOG.info(" - base path: " + basePath);
     LOG.info(" - num nodes: " + n);
     LOG.info(" - start iteration: " + s);
@@ -453,7 +453,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       boolean useCombiner, boolean useInMapperCombiner) throws Exception {
     Job job = Job.getInstance(getConf());
     job.setJobName("PageRank:Basic:iteration" + j + ":Phase1");
-    job.setJarByClass(RunPageRankBasic.class);
+    job.setJarByClass(RunPersonalizedPageRankBasic.class);
 
     String in = basePath + "/iter" + formatter.format(i);
     String out = basePath + "/iter" + formatter.format(j) + "t";
@@ -526,7 +526,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
   private void phase2(int i, int j, float missing, String basePath, int numNodes) throws Exception {
     Job job = Job.getInstance(getConf());
     job.setJobName("PageRank:Basic:iteration" + j + ":Phase2");
-    job.setJarByClass(RunPageRankBasic.class);
+    job.setJarByClass(RunPersonalizedPageRankBasic.class);
 
     LOG.info("missing PageRank mass: " + missing);
     LOG.info("number of nodes: " + numNodes);
