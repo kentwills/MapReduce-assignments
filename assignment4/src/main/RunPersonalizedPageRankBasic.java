@@ -277,14 +277,16 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			float p = node.getPageRank();
 			if (Integer.toString(nid.get()).equals(sources[0])) {
 				LOG.info("---"+nid);
-				System.out.println(nid);
-				LOG.info(nid);
+				
+				
 				
 				float mass;
 				if(missingMass!=0)
 					mass = sumLogProbs(p, (float) (Math.log(missingMass)));
-				else 
-					mass=p;
+				else{
+					LOG.info(p);
+					mass=0;
+				}
 				
 				float jump = (float) (Math.log(ALPHA)-Math.log(n));
 				float link = sumLogProbs((float) Math.log(1.0f - ALPHA), mass);
