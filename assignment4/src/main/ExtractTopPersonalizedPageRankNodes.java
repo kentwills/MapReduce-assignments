@@ -52,7 +52,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
   
   private static class MyMapper extends
       Mapper<IntWritable, PageRankNode, IntWritable, FloatWritable> {
-    private TopNScoredObjects<Integer>[] queue;
+    private TopNScoredObjects<Integer> queue;
 	private String[] sources;
 	
     @Override
@@ -64,16 +64,16 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 			throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 		}
 		
-		for (int s=0 ; s<sources.length;s++)
-			queue[s] = new TopNScoredObjects<Integer>(k);
+		//for (int s=0 ; s<sources.length;s++)
+			queue = new TopNScoredObjects<Integer>(k);
     }
 
     @Override
     public void map(IntWritable nid, PageRankNode node, Context context) throws IOException,
         InterruptedException {
     	
-    	for (int s=0 ; s<sources.length;s++)
-    		queue[s].add(node.getNodeId(), node.getPageRank(s));
+    	//for (int s=0 ; s<sources.length;s++)
+    		queue.add(node.getNodeId(), node.getPageRank(0));
     }
 
     @Override
@@ -82,7 +82,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       for (int s=0 ; s<sources.length;s++){
     	  IntWritable key = new IntWritable();
           FloatWritable value = new FloatWritable();
-	      for (PairOfObjectFloat<Integer> pair : queue[s].extractAll()) {
+	      for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
 	        key.set(pair.getLeftElement());
 	        value.set(pair.getRightElement());
 	        context.write(key, value);
