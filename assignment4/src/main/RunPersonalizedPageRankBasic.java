@@ -274,7 +274,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
 
-			if (Integer.toString(nid.get()) == sources[0]) {
+			if (Integer.toString(nid.get()).equals(sources[0])) {
+				LOG.info("---"+nid);
 				System.out.println(nid);
 				LOG.info(nid);
 				float p = node.getPageRank();
