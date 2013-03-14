@@ -104,12 +104,13 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
       }
       
+      for (int i=0;i<sources.length;i++){
       if (Integer.toString(node.getNodeId()).equals(sources[0])){
-  	  	node.setPageRank((float) 0);//Log(1)
+  	  	node.setPageRank((float) 0,i);//Log(1)
   	  }
     else
-  	  node.setPageRank((float) Float.NEGATIVE_INFINITY);//(Log(0)     
-
+  	  node.setPageRank((float) Float.NEGATIVE_INFINITY,i);//(Log(0)     
+      }
       context.getCounter("graph", "numNodes").increment(1);
       context.getCounter("graph", "numEdges").increment(arr.length - 1);
 
