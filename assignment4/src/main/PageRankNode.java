@@ -135,9 +135,12 @@ public class PageRankNode implements Writable {
 		out.writeInt(nodeid);
 
 		try{
-		System.out.println(nodeid+","+pagerank.length);
-		}catch(Exception e){}
-		size=3;
+			size=pagerank.length;
+		}catch(Exception e){
+			System.out.println(nodeid+","+pagerank.length);
+			size=3;
+		}
+		
 		
 		if (type.equals(Type.Mass)) {
 			out.writeInt(size);
