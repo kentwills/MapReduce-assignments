@@ -267,33 +267,35 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
-			// nodeCnt = conf.getInt("NodeCount", 0);
+			nodeCnt = conf.getInt("NodeCount", 0);
 		}
 
 		@Override
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
-
+			float n = nodeCnt;
 			float p = node.getPageRank();
 			if (Integer.toString(nid.get()).equals(sources[0])) {
 				LOG.info("---"+nid);
 				System.out.println(nid);
 				LOG.info(nid);
 				
-
 				float mass;
 				if(missingMass!=0)
 					mass = sumLogProbs(p, (float) (Math.log(missingMass)));
 				else 
 					mass=p;
 				
-				float jump = (float) (Math.log(ALPHA));
+				float jump = (float) (Math.log(ALPHA)-Math.log(n));
 				float link = sumLogProbs((float) Math.log(1.0f - ALPHA), mass);
 
 				p = sumLogProbs(jump, link);							
 			}
 			else{
-				p=sumLogProbs((float) Math.log(1.0f - ALPHA),p);
+				float jump = (float) (Math.log(ALPHA)-Math.log(n));
+				float link = sumLogProbs((float) Math.log(1.0f - ALPHA),p);
+				
+				p=sumLogProbs(jump, link);
 			}
 			node.setPageRank(p);
 			LOG.info(node.getNodeId()+" "+node.getPageRank());
