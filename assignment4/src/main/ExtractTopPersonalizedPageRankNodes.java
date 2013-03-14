@@ -34,6 +34,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Reducer.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -47,33 +48,48 @@ import edu.umd.cloud9.util.pair.PairOfObjectFloat;
 
 public class ExtractTopPersonalizedPageRankNodes extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ExtractTopPersonalizedPageRankNodes.class);
-
+  private static final String NODE_SRC_FIELD = "node.src";
+  
   private static class MyMapper extends
       Mapper<IntWritable, PageRankNode, IntWritable, FloatWritable> {
-    private TopNScoredObjects<Integer> queue;
-
+    private TopNScoredObjects<Integer>[] queue;
+	private String[] sources;
+	
     @Override
     public void setup(Context context) throws IOException {
       int k = context.getConfiguration().getInt("n", 100);
-      queue = new TopNScoredObjects<Integer>(k);
+      
+      sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
+		if (sources.length == 0) {
+			throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
+		}
+		
+		for (int s=0 ; s<sources.length;s++)
+			queue[s] = new TopNScoredObjects<Integer>(k);
     }
 
     @Override
     public void map(IntWritable nid, PageRankNode node, Context context) throws IOException,
         InterruptedException {
-      queue.add(node.getNodeId(), node.getPageRank());
+    	
+    	for (int s=0 ; s<sources.length;s++)
+    		queue[s].add(node.getNodeId(), node.getPageRank(s));
     }
 
     @Override
     public void cleanup(Context context) throws IOException, InterruptedException {
-      IntWritable key = new IntWritable();
-      FloatWritable value = new FloatWritable();
-
-      for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
-        key.set(pair.getLeftElement());
-        value.set(pair.getRightElement());
-        context.write(key, value);
+     
+      for (int s=0 ; s<sources.length;s++){
+    	  IntWritable key = new IntWritable();
+          FloatWritable value = new FloatWritable();
+	      for (PairOfObjectFloat<Integer> pair : queue[s].extractAll()) {
+	        key.set(pair.getLeftElement());
+	        value.set(pair.getRightElement());
+	        context.write(key, value);
+	      }
       }
+      
+      
     }
   }
 
@@ -118,6 +134,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String TOP = "top";
+  private static final String SOURCES = "sources";
 
   /**
    * Runs this tool.
@@ -132,6 +149,8 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         .withDescription("output path").create(OUTPUT));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("top n").create(TOP));
+	options.addOption(OptionBuilder.withArgName("path").hasArg()
+			.withDescription("sources").create(SOURCES));
 
     CommandLine cmdline;
     CommandLineParser parser = new GnuParser();
@@ -155,13 +174,16 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     String inputPath = cmdline.getOptionValue(INPUT);
     String outputPath = cmdline.getOptionValue(OUTPUT);
     int n = Integer.parseInt(cmdline.getOptionValue(TOP));
+    String[] sources = cmdline.getOptionValue(SOURCES).split(",");
 
     LOG.info("Tool name: " + ExtractTopPersonalizedPageRankNodes.class.getSimpleName());
     LOG.info(" - input: " + inputPath);
     LOG.info(" - output: " + outputPath);
     LOG.info(" - top: " + n);
+    LOG.info(" - sources: " + showSources(sources));
 
     Configuration conf = getConf();
+    conf.setStrings(NODE_SRC_FIELD, sources);
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
     conf.setInt("n", n);
 
@@ -193,6 +215,13 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
     return 0;
   }
+	private String showSources(String[] sources) {
+		String concat = "";
+		for (String s : sources) {
+			concat += s + ",";
+		}
+		return concat.substring(0, concat.length() - 1);
+	}
 
   /**
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
