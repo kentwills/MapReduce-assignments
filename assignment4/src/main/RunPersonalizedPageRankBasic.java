@@ -274,15 +274,21 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
 
-			if (Integer.toString(nid.get()).equals(sources[0])&&missingMass!=0) {
+			if (Integer.toString(nid.get()).equals(sources[0])) {
 				LOG.info("---"+nid);
 				System.out.println(nid);
 				LOG.info(nid);
 				float p = node.getPageRank();
 
+				float mass;
+				if(missingMass!=0)
+					mass = sumLogProbs(p, (float) (Math.log(missingMass)));
+				else 
+					mass=p;
+				
 				float jump = (float) (Math.log(ALPHA));
 				float link = (float) Math.log(1.0f - ALPHA)
-						+ sumLogProbs(p, (float) (Math.log(missingMass)));
+						+ mass;
 
 				p = sumLogProbs(jump, link);
 				node.setPageRank(p);
