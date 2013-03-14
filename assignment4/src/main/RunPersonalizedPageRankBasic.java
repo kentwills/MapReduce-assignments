@@ -81,8 +81,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		nodes, edges, massMessages, massMessagesSaved, massMessagesReceived, missingStructure
 	};
 
-	
-	
 	// Mapper with in-mapper combiner optimization.
 	private static class MapWithInMapperCombiningClass extends
 			Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode> {
@@ -92,20 +90,20 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		// For passing along node structure.
 		private static final PageRankNode intermediateStructure = new PageRankNode();
 		private String[] sources;
-		
+
 		@Override
-		public void setup(Context context) throws IOException {			
+		public void setup(Context context) throws IOException {
 			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
-		
+
 		}
-		
+
 		@Override
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
-			
+
 			// Pass along node structure.
 			intermediateStructure.setNodeId(node.getNodeId());
 			intermediateStructure.setType(PageRankNode.Type.Structure);
@@ -113,64 +111,67 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 			context.write(nid, intermediateStructure);
 
-			for (int s=0;s<sources.length;s++){
-			int massMessages = 0;
-			int massMessagesSaved = 0;
+			for (int s = 0; s < sources.length; s++) {
+				int massMessages = 0;
+				int massMessagesSaved = 0;
 
-			// Distribute PageRank mass to neighbors (along outgoing edges).
-			if (node.getAdjacenyList().size() > 0) {
-				// Each neighbor gets an equal share of PageRank mass.
-				ArrayListOfIntsWritable list = node.getAdjacenyList();
-				float mass = node.getPageRank(s)
-						- (float) StrictMath.log(list.size());
+				// Distribute PageRank mass to neighbors (along outgoing edges).
+				if (node.getAdjacenyList().size() > 0) {
+					// Each neighbor gets an equal share of PageRank mass.
+					ArrayListOfIntsWritable list = node.getAdjacenyList();
+					float mass = node.getPageRank(s)
+							- (float) StrictMath.log(list.size());
 
-				context.getCounter(PageRank.edges).increment(list.size());
+					context.getCounter(PageRank.edges).increment(list.size());
 
-				// Iterate over neighbors.
-				for (int i = 0; i < list.size(); i++) {
-					int neighbor = list.get(s);
+					// Iterate over neighbors.
+					for (int i = 0; i < list.size(); i++) {
+						int neighbor = list.get(s);
 
-					if (map.containsKey(neighbor)) {
-						// Already message destined for that node; add PageRank
-						// mass contribution.
-						massMessagesSaved++;
-						map.put(neighbor, sumLogProbs(map.get(neighbor), mass));
-					} else {
-						// New destination node; add new entry in map.
-						massMessages++;
-						map.put(neighbor, mass);
+						if (map.containsKey(neighbor)) {
+							// Already message destined for that node; add
+							// PageRank
+							// mass contribution.
+							massMessagesSaved++;
+							map.put(neighbor,
+									sumLogProbs(map.get(neighbor), mass));
+						} else {
+							// New destination node; add new entry in map.
+							massMessages++;
+							map.put(neighbor, mass);
+						}
 					}
 				}
-			}
 
-			// Bookkeeping.
-			context.getCounter(PageRank.nodes).increment(1);
-			context.getCounter(PageRank.massMessages).increment(massMessages);
-			context.getCounter(PageRank.massMessagesSaved).increment(
-					massMessagesSaved);
+				// Bookkeeping.
+				context.getCounter(PageRank.nodes).increment(1);
+				context.getCounter(PageRank.massMessages).increment(
+						massMessages);
+				context.getCounter(PageRank.massMessagesSaved).increment(
+						massMessagesSaved);
 			}
 		}
 
 		@Override
 		public void cleanup(Context context) throws IOException,
 				InterruptedException {
-			for (int i=0;i<sources.length;i++){
-			// Now emit the messages all at once.
-			IntWritable k = new IntWritable();
-			PageRankNode mass = new PageRankNode();
-			mass.initPageRank(sources.length);
-			
-			for (MapIF.Entry e : map.entrySet()) {
-				k.set(e.getKey());
+			for (int i = 0; i < sources.length; i++) {
+				// Now emit the messages all at once.
+				IntWritable k = new IntWritable();
+				PageRankNode mass = new PageRankNode();
+				mass.initPageRank(sources.length);
 
-				mass.setNodeId(e.getKey());
-				mass.setType(PageRankNode.Type.Mass);
-				mass.setPageRank(e.getValue(),i);
+				for (MapIF.Entry e : map.entrySet()) {
+					k.set(e.getKey());
 
-				context.write(k, mass);
+					mass.setNodeId(e.getKey());
+					mass.setType(PageRankNode.Type.Mass);
+					mass.setPageRank(e.getValue(), i);
+
+					context.write(k, mass);
+				}
 			}
 		}
-			}
 	}
 
 	// Reduce: sums incoming PageRank contributions, rewrite graph structure.
@@ -181,16 +182,16 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		// through dangling nodes.
 		private float totalMass = Float.NEGATIVE_INFINITY;
 		private String[] sources;
-		
+
 		@Override
-		public void setup(Context context) throws IOException {			
+		public void setup(Context context) throws IOException {
 			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
-		
+
 		}
-		
+
 		@Override
 		public void reduce(IntWritable nid, Iterable<PageRankNode> iterable,
 				Context context) throws IOException, InterruptedException {
@@ -206,7 +207,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			int massMessagesReceived = 0;
 			int structureReceived = 0;
 
-			for (int i=0;i<sources.length;i++){
 			float mass = Float.NEGATIVE_INFINITY;
 			while (values.hasNext()) {
 				PageRankNode n = values.next();
@@ -220,44 +220,52 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				} else {
 					// This is a message that contains PageRank mass;
 					// accumulate.
-					mass = sumLogProbs(mass, n.getPageRank(i));
+					for (int i = 0; i < sources.length; i++) {
+						mass = sumLogProbs(mass, n.getPageRank(i));
+					}
 					massMessagesReceived++;
 				}
+
+				for (int i = 0; i < sources.length; i++) {
+					// Update the final accumulated PageRank mass.
+					node.setPageRank(mass, i);
+				}
+				context.getCounter(PageRank.massMessagesReceived).increment(
+						massMessagesReceived);
+
+				// Error checking.
+				if (structureReceived == 1) {
+					// Everything checks out, emit final node structure with
+					// updated
+					// PageRank value.
+					context.write(nid, node);
+
+					// Keep track of total PageRank mass.
+					totalMass = sumLogProbs(totalMass, mass);
+				} else if (structureReceived == 0) {
+					// We get into this situation if there exists an edge
+					// pointing
+					// to a node which has no
+					// corresponding node structure (i.e., PageRank mass was
+					// passed
+					// to a non-existent node)...
+					// log and count but move on.
+					context.getCounter(PageRank.missingStructure).increment(1);
+					LOG.warn("No structure received for nodeid: " + nid.get()
+							+ " mass: " + massMessagesReceived);
+					// It's important to note that we don't add the PageRank
+					// mass to
+					// total... if PageRank mass
+					// was sent to a non-existent node, it should simply vanish.
+				} else {
+					// This shouldn't happen!
+					throw new RuntimeException(
+							"Multiple structure received for nodeid: "
+									+ nid.get() + " mass: "
+									+ massMessagesReceived + " struct: "
+									+ structureReceived);
+				}
 			}
-			
-
-			// Update the final accumulated PageRank mass.
-			node.setPageRank(mass,i);
-			context.getCounter(PageRank.massMessagesReceived).increment(
-					massMessagesReceived);
-
-			// Error checking.
-			if (structureReceived == 1) {
-				// Everything checks out, emit final node structure with updated
-				// PageRank value.
-				context.write(nid, node);
-
-				// Keep track of total PageRank mass.
-				totalMass = sumLogProbs(totalMass, mass);
-			} else if (structureReceived == 0) {
-				// We get into this situation if there exists an edge pointing
-				// to a node which has no
-				// corresponding node structure (i.e., PageRank mass was passed
-				// to a non-existent node)...
-				// log and count but move on.
-				context.getCounter(PageRank.missingStructure).increment(1);
-				LOG.warn("No structure received for nodeid: " + nid.get()
-						+ " mass: " + massMessagesReceived);
-				// It's important to note that we don't add the PageRank mass to
-				// total... if PageRank mass
-				// was sent to a non-existent node, it should simply vanish.
-			} else {
-				// This shouldn't happen!
-				throw new RuntimeException(
-						"Multiple structure received for nodeid: " + nid.get()
-								+ " mass: " + massMessagesReceived
-								+ " struct: " + structureReceived);
-			}}
 		}
 
 		@Override
@@ -288,7 +296,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		private int nodeCnt = 0;
 		private String[] sources;
 
-
 		@Override
 		public void setup(Context context) throws IOException {
 			Configuration conf = context.getConfiguration();
@@ -299,29 +306,28 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
 			nodeCnt = conf.getInt("NodeCount", 0);
-		
+
 		}
 
 		@Override
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
 			float n = nodeCnt;
-			
 
-			for (int i=0;i<sources.length;i++){
+			for (int i = 0; i < sources.length; i++) {
 				float p = node.getPageRank(i);
-			if (Integer.toString(nid.get()).equals(sources[i])) {
-				LOG.info("---" + nid);
-				//if (missingMass != 0) {
+				if (Integer.toString(nid.get()).equals(sources[i])) {
+					LOG.info("---" + nid);
+					// if (missingMass != 0) {
 					float jump = (float) (Math.log(ALPHA));
 					float link = (float) Math.log(1.0f - ALPHA)
 							+ sumLogProbs(p, (float) (missingMass));
 
 					p = sumLogProbs(jump, link);
-					node.setPageRank(p,i);
-				//}
+					node.setPageRank(p, i);
+					// }
+				}
 			}
-		}
 			/*
 			 * if (Integer.toString(nid.get()).equals(sources[0])) {
 			 * LOG.info("---"+nid);
