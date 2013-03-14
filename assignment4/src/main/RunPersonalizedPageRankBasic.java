@@ -275,7 +275,15 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				throws IOException, InterruptedException {
 			float n = nodeCnt;
 			float p = node.getPageRank();
-			if (Integer.toString(nid.get()).equals(sources[0])) {
+			
+		      float jump = (float) (Math.log(ALPHA) - Math.log(nodeCnt));
+		      float link = (float) Math.log(1.0f - ALPHA)
+		          + sumLogProbs(p, (float) (Math.log(missingMass) - Math.log(nodeCnt)));
+
+		      p = sumLogProbs(jump, link);
+		      node.setPageRank(p);
+			
+			/*if (Integer.toString(nid.get()).equals(sources[0])) {
 				LOG.info("---"+nid);
 				
 				
@@ -300,8 +308,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				//float link = sumLogProbs((float) Math.log(1.0f - ALPHA),p);
 				//if(p!=Float.NEGATIVE_INFINITY)
 				//	p=sumLogProbs(jump, link);
-			}
-			node.setPageRank(p);
+			}*/
+			//node.setPageRank(p);
 			LOG.info(node.getNodeId()+" "+node.getPageRank());
 			context.write(nid, node);
 		}
