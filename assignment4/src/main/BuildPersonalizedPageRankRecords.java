@@ -63,6 +63,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     private static final IntWritable nid = new IntWritable();
     private static final PageRankNode node = new PageRankNode();
     private static String [] sources;
+   
 
     @Override
     public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNode>.Context context) {
@@ -77,6 +78,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       }
       LOG.info("Sources all: " +showSources(sources));
       node.setType(PageRankNode.Type.Complete);
+      
       
  
     }

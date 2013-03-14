@@ -81,6 +81,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		nodes, edges, massMessages, massMessagesSaved, massMessagesReceived, missingStructure
 	};
 
+	
+	
 	// Mapper with in-mapper combiner optimization.
 	private static class MapWithInMapperCombiningClass extends
 			Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode> {
@@ -89,10 +91,21 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 		// For passing along node structure.
 		private static final PageRankNode intermediateStructure = new PageRankNode();
-
+		private String[] sources;
+		
+		@Override
+		public void setup(Context context) throws IOException {			
+			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
+			if (sources.length == 0) {
+				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
+			}
+		
+		}
+		
 		@Override
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
+			
 			// Pass along node structure.
 			intermediateStructure.setNodeId(node.getNodeId());
 			intermediateStructure.setType(PageRankNode.Type.Structure);
@@ -100,6 +113,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 			context.write(nid, intermediateStructure);
 
+			for (int s=0;s<sources.length;s++){
 			int massMessages = 0;
 			int massMessagesSaved = 0;
 
@@ -107,14 +121,14 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			if (node.getAdjacenyList().size() > 0) {
 				// Each neighbor gets an equal share of PageRank mass.
 				ArrayListOfIntsWritable list = node.getAdjacenyList();
-				float mass = node.getPageRank()
+				float mass = node.getPageRank(s)
 						- (float) StrictMath.log(list.size());
 
 				context.getCounter(PageRank.edges).increment(list.size());
 
 				// Iterate over neighbors.
 				for (int i = 0; i < list.size(); i++) {
-					int neighbor = list.get(i);
+					int neighbor = list.get(s);
 
 					if (map.containsKey(neighbor)) {
 						// Already message destined for that node; add PageRank
@@ -134,11 +148,13 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			context.getCounter(PageRank.massMessages).increment(massMessages);
 			context.getCounter(PageRank.massMessagesSaved).increment(
 					massMessagesSaved);
+			}
 		}
 
 		@Override
 		public void cleanup(Context context) throws IOException,
 				InterruptedException {
+			for (int i=0;i<sources.length;i++){
 			// Now emit the messages all at once.
 			IntWritable k = new IntWritable();
 			PageRankNode mass = new PageRankNode();
@@ -148,11 +164,12 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 				mass.setNodeId(e.getKey());
 				mass.setType(PageRankNode.Type.Mass);
-				mass.setPageRank(e.getValue());
+				mass.setPageRank(e.getValue(),i);
 
 				context.write(k, mass);
 			}
 		}
+			}
 	}
 
 	// Reduce: sums incoming PageRank contributions, rewrite graph structure.
@@ -162,7 +179,17 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		// missing PageRank mass lost
 		// through dangling nodes.
 		private float totalMass = Float.NEGATIVE_INFINITY;
-
+		private String[] sources;
+		
+		@Override
+		public void setup(Context context) throws IOException {			
+			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
+			if (sources.length == 0) {
+				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
+			}
+		
+		}
+		
 		@Override
 		public void reduce(IntWritable nid, Iterable<PageRankNode> iterable,
 				Context context) throws IOException, InterruptedException {
@@ -178,6 +205,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			int massMessagesReceived = 0;
 			int structureReceived = 0;
 
+			for (int i=0;i<sources.length;i++){
 			float mass = Float.NEGATIVE_INFINITY;
 			while (values.hasNext()) {
 				PageRankNode n = values.next();
@@ -191,13 +219,14 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				} else {
 					// This is a message that contains PageRank mass;
 					// accumulate.
-					mass = sumLogProbs(mass, n.getPageRank());
+					mass = sumLogProbs(mass, n.getPageRank(i));
 					massMessagesReceived++;
 				}
 			}
+			
 
 			// Update the final accumulated PageRank mass.
-			node.setPageRank(mass);
+			node.setPageRank(mass,i);
 			context.getCounter(PageRank.massMessagesReceived).increment(
 					massMessagesReceived);
 
@@ -227,7 +256,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 						"Multiple structure received for nodeid: " + nid.get()
 								+ " mass: " + massMessagesReceived
 								+ " struct: " + structureReceived);
-			}
+			}}
 		}
 
 		@Override
@@ -258,6 +287,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		private int nodeCnt = 0;
 		private String[] sources;
 
+
 		@Override
 		public void setup(Context context) throws IOException {
 			Configuration conf = context.getConfiguration();
@@ -268,15 +298,18 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
 			nodeCnt = conf.getInt("NodeCount", 0);
+		
 		}
 
 		@Override
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
 			float n = nodeCnt;
-			float p = node.getPageRank();
+			
 
-			if (Integer.toString(nid.get()).equals(sources[0])) {
+			for (int i=0;i<sources.length;i++){
+				float p = node.getPageRank(i);
+			if (Integer.toString(nid.get()).equals(sources[i])) {
 				LOG.info("---" + nid);
 				//if (missingMass != 0) {
 					float jump = (float) (Math.log(ALPHA));
@@ -284,9 +317,10 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 							+ sumLogProbs(p, (float) (missingMass));
 
 					p = sumLogProbs(jump, link);
-					node.setPageRank(p);
+					node.setPageRank(p,i);
 				//}
 			}
+		}
 			/*
 			 * if (Integer.toString(nid.get()).equals(sources[0])) {
 			 * LOG.info("---"+nid);
@@ -306,7 +340,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			 * //if(p!=Float.NEGATIVE_INFINITY) // p=sumLogProbs(jump, link); }
 			 */
 			// node.setPageRank(p);
-			LOG.info(node.getNodeId() + " " + node.getPageRank());
+			LOG.info(node.getNodeId() + " " + node.getPageRank(0));
 			context.write(nid, node);
 		}
 	}
