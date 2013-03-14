@@ -279,9 +279,9 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			if (Integer.toString(nid.get()).equals(sources[0])) {
 				LOG.info("---" + nid);
 				//if (missingMass != 0) {
-					float jump = (float) (Math.log(ALPHA));
+					float jump = (float) (Math.log(ALPHA)- Math.log(nodeCnt));
 					float link = (float) Math.log(1.0f - ALPHA)
-							+ sumLogProbs(p, (float) (Math.log(missingMass)));
+							+ sumLogProbs(p, (float) (Math.log(missingMass)- Math.log(nodeCnt)));
 
 					p = sumLogProbs(jump, link);
 					node.setPageRank(p);
