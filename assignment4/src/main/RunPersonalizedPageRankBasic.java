@@ -203,6 +203,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 			node.setType(PageRankNode.Type.Complete);
 			node.setNodeId(nid.get());
+			node.initPageRank(sources.length);
 
 			int massMessagesReceived = 0;
 			int structureReceived = 0;
