@@ -281,23 +281,25 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				
 				
 				float mass;
-				if(missingMass!=0)
+				if(missingMass!=0){
 					mass = sumLogProbs(p, (float) (Math.log(missingMass)));
+					float jump = (float) (Math.log(ALPHA)-Math.log(n));
+					float link = sumLogProbs((float) Math.log(1.0f - ALPHA), mass);
+
+					p = sumLogProbs(jump, link);
+				}
 				else{
 					LOG.info(p);
 					mass=0;
 				}
 				
-				float jump = (float) (Math.log(ALPHA)-Math.log(n));
-				float link = sumLogProbs((float) Math.log(1.0f - ALPHA), mass);
-
-				p = sumLogProbs(jump, link);							
+											
 			}
 			else{
-				float jump = (float) (Math.log(ALPHA)-Math.log(n));
-				float link = sumLogProbs((float) Math.log(1.0f - ALPHA),p);
-				if(p!=Float.NEGATIVE_INFINITY)
-					p=sumLogProbs(jump, link);
+				//float jump = (float) (Math.log(ALPHA)-Math.log(n));
+				//float link = sumLogProbs((float) Math.log(1.0f - ALPHA),p);
+				//if(p!=Float.NEGATIVE_INFINITY)
+				//	p=sumLogProbs(jump, link);
 			}
 			node.setPageRank(p);
 			LOG.info(node.getNodeId()+" "+node.getPageRank());
