@@ -261,7 +261,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		@Override
 		public void setup(Context context) throws IOException {
 			Configuration conf = context.getConfiguration();
-
+			LOG.info("RESULT     ___________"+(Float.NEGATIVE_INFINITY-.82));
 			missingMass = conf.getFloat("MissingMass", 0.0f);
 			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
