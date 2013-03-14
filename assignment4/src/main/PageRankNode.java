@@ -99,13 +99,17 @@ public class PageRankNode implements Writable {
 		type = mapping[b];
 		nodeid = in.readInt();
 
-		if (type.equals(Type.Mass)) {
-			pagerank = in.readFloat();
+		if (type.equals(Type.Mass)) {			
+			for (int i = 0; i < pagerank.length; i++) {
+				pagerank[i]= in.readFloat();
+			}
 			return;
 		}
 
 		if (type.equals(Type.Complete)) {
-			pagerank = in.readFloat();
+			for (int i = 0; i < pagerank.length; i++) {
+				pagerank[i]= in.readFloat();
+			}
 		}
 
 		adjacenyList = new ArrayListOfIntsWritable();
@@ -123,12 +127,16 @@ public class PageRankNode implements Writable {
 		out.writeInt(nodeid);
 
 		if (type.equals(Type.Mass)) {
-			out.writeFloat(pagerank);
+			for (int i = 0; i < pagerank.length; i++) {
+				out.writeFloat(pagerank[i]);
+			}
 			return;
 		}
 
 		if (type.equals(Type.Complete)) {
-			out.writeFloat(pagerank);
+			for (int i = 0; i < pagerank.length; i++) {
+				out.writeFloat(pagerank[i]);
+			}
 		}
 
 		adjacenyList.write(out);
