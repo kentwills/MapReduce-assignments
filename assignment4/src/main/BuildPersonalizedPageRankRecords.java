@@ -102,8 +102,9 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
       }
       
+	  	LOG.info("Source"+sources[0] +", "+ Integer.toString(node.getNodeId()));
       if (Integer.toString(node.getNodeId())==sources[0]){
-  	  	LOG.info("Source"+sources[0]);
+  	  	LOG.info("--Source"+sources[0]);
   	  	node.setPageRank((float) 0);//Log(1)
   	  }
     else
