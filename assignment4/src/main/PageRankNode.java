@@ -105,9 +105,10 @@ public class PageRankNode implements Writable {
 		type = mapping[b];
 		nodeid = in.readInt();
 
-		size = in.readInt();
-		initPageRank(size);
-		if (type.equals(Type.Mass)) {			
+		
+		if (type.equals(Type.Mass)) {
+			size = in.readInt();
+			initPageRank(size);
 			for (int i = 0; i < size; i++) {
 				pagerank[i]= in.readFloat();
 			}
@@ -115,6 +116,8 @@ public class PageRankNode implements Writable {
 		}
 
 		if (type.equals(Type.Complete)) {
+			size = in.readInt();
+			initPageRank(size);
 			for (int i = 0; i < size; i++) {
 				pagerank[i]= in.readFloat();
 			}
