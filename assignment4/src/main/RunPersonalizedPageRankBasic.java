@@ -286,7 +286,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				p = sumLogProbs(jump, link);
 				node.setPageRank(p);
 			}
-
+			LOG.info(nid);
 			context.write(nid, node);
 		}
 	}
