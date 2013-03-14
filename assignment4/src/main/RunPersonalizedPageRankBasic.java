@@ -195,6 +195,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 	      if (massMessages > 0) {
 	        intermediateMass.setNodeId(nid.get());
 	        intermediateMass.setType(PageRankNode.Type.Mass);
+	        intermediateMass.initPageRank(sources.length);
 	        for (int s = 0; s < sources.length; s++) {
 	        	intermediateMass.setPageRank(mass[s],s);
 	        }
