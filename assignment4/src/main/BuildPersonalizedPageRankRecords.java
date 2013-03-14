@@ -71,11 +71,11 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
       
-      sources = context.getConfiguration().get(NODE_CNT_FIELD).split(",");
+      sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
       if(sources.length==0){
     	  throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");  
       }
-      
+      LOG.info("Sources all: " +showSources(sources));
       node.setType(PageRankNode.Type.Complete);
       
  
@@ -102,8 +102,8 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
       }
       
-	  	LOG.info("Source"+sources[0] +", "+ Integer.toString(node.getNodeId()));
-      if (Integer.toString(node.getNodeId())==sources[0]){
+	  	LOG.info(sources[0] +", "+ Integer.toString(node.getNodeId()));
+      if (Integer.toString(node.getNodeId()).equals(sources[0])){
   	  	LOG.info("--Source"+sources[0]);
   	  	node.setPageRank((float) 0);//Log(1)
   	  }
@@ -207,7 +207,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     return 0;
   }
 
-  private String showSources(String [] sources){
+  private static String showSources(String [] sources){
 	  String concat="";
 	  for (String s :sources ){
 		  concat+=s+",";
