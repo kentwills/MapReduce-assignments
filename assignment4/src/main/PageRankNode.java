@@ -137,7 +137,7 @@ public class PageRankNode implements Writable {
 		try{
 			size=pagerank.length;
 		}catch(Exception e){
-			System.out.println(nodeid+","+pagerank.length);
+			System.out.println(nodeid+","+type.val);
 			size=3;
 		}
 		
