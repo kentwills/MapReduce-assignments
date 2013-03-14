@@ -263,8 +263,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			Configuration conf = context.getConfiguration();
 
 			missingMass = conf.getFloat("MissingMass", 0.0f);
-			sources = context.getConfiguration().getStrings(NODE_SRC_FIELD)[0]
-					.split(",");
+			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}

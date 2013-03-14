@@ -71,7 +71,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
       
-      sources = context.getConfiguration().getStrings(NODE_CNT_FIELD)[0].split(",");
+      sources = context.getConfiguration().get(NODE_CNT_FIELD).split(",");
       if(sources.length==0){
     	  throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");  
       }
