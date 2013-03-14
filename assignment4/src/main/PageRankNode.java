@@ -60,6 +60,10 @@ public class PageRankNode implements Writable {
 		return pagerank[i];
 	}
 
+	public void initPageRank(int i) {
+		this.pagerank = new float[i];
+	}
+	
 	public void setPageRank(float p,int i) {
 		this.pagerank[i] = p;
 	}

@@ -87,15 +87,17 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     public void map(LongWritable key, Text t, Context context) throws IOException,
         InterruptedException {
       String[] arr = t.toString().trim().split("\\s+");
-
+      
       nid.set(Integer.parseInt(arr[0]));
+      node.initPageRank(sources.length);
       if (arr.length == 1) {
         node.setNodeId(Integer.parseInt(arr[0]));
         node.setAdjacencyList(new ArrayListOfIntsWritable());
 
       } else {
         node.setNodeId(Integer.parseInt(arr[0]));
-
+        
+        
         int[] neighbors = new int[arr.length - 1];
         for (int i = 1; i < arr.length; i++) {
           neighbors[i - 1] = Integer.parseInt(arr[i]);
