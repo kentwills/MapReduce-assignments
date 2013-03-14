@@ -294,8 +294,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			else{
 				float jump = (float) (Math.log(ALPHA)-Math.log(n));
 				float link = sumLogProbs((float) Math.log(1.0f - ALPHA),p);
-				
-				//p=sumLogProbs(jump, link);
+				if(p!=Float.NEGATIVE_INFINITY)
+					p=sumLogProbs(jump, link);
 			}
 			node.setPageRank(p);
 			LOG.info(node.getNodeId()+" "+node.getPageRank());
