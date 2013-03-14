@@ -281,7 +281,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				if (missingMass != 0) {
 					float jump = (float) (Math.log(ALPHA));
 					float link = (float) Math.log(1.0f - ALPHA)
-							+ sumLogProbs(p, (float) (Math.log(missingMass)));
+							+ ((float) (Math.log(missingMass)));
 
 					p = sumLogProbs(jump, link);
 					node.setPageRank(p);
