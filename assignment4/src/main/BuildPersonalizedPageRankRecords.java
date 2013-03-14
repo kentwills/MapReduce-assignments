@@ -113,7 +113,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements
 				} else
 					node.setPageRank((float) Float.NEGATIVE_INFINITY, i);// (Log(0)
 
-				LOG.info(nid + " " + node.getPageRank(i));
+				//LOG.info(nid + " " + node.getPageRank(i));
 			}
 
 			context.getCounter("graph", "numNodes").increment(1);

@@ -107,7 +107,6 @@ public class PageRankNode implements Writable {
 
 		size = in.readInt();
 		initPageRank(size);
-		System.out.println(size);
 		if (type.equals(Type.Mass)) {			
 			for (int i = 0; i < size; i++) {
 				pagerank[i]= in.readFloat();
