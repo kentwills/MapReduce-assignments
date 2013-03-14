@@ -261,7 +261,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		@Override
 		public void setup(Context context) throws IOException {
 			Configuration conf = context.getConfiguration();
-			LOG.info("RESULT     ___________"+(Float.NEGATIVE_INFINITY-.82));
+			LOG.info("RESULT     ___________" + (Float.NEGATIVE_INFINITY - .82));
 			missingMass = conf.getFloat("MissingMass", 0.0f);
 			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
@@ -275,43 +275,38 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				throws IOException, InterruptedException {
 			float n = nodeCnt;
 			float p = node.getPageRank();
-			
-			if(missingMass!=0){
-		      float jump = (float) (Math.log(ALPHA) - Math.log(nodeCnt));
-		      float link = (float) Math.log(1.0f - ALPHA)
-		          + sumLogProbs(p, (float) (Math.log(missingMass) - Math.log(nodeCnt)));
 
-		      p = sumLogProbs(jump, link);
-		      node.setPageRank(p);
-			}
-			/*if (Integer.toString(nid.get()).equals(sources[0])) {
-				LOG.info("---"+nid);
-				
-				
-				
-				float mass;
-				if(missingMass!=0){
-					mass = sumLogProbs(p, (float) (Math.log(missingMass)));
-					float jump = (float) (Math.log(ALPHA)-Math.log(n));
-					float link = sumLogProbs((float) Math.log(1.0f - ALPHA), mass);
+			if (Integer.toString(nid.get()).equals(sources[0])) {
+				LOG.info("---" + nid);
+				if (missingMass != 0) {
+					float jump = (float) (Math.log(ALPHA));
+					float link = (float) Math.log(1.0f - ALPHA)
+							+ sumLogProbs(p, (float) (Math.log(missingMass)));
 
 					p = sumLogProbs(jump, link);
+					node.setPageRank(p);
 				}
-				else{
-					LOG.info(p);
-					mass=0;
-				}
-				
-											
 			}
-			else{
-				//float jump = (float) (Math.log(ALPHA)-Math.log(n));
-				//float link = sumLogProbs((float) Math.log(1.0f - ALPHA),p);
-				//if(p!=Float.NEGATIVE_INFINITY)
-				//	p=sumLogProbs(jump, link);
-			}*/
-			//node.setPageRank(p);
-			LOG.info(node.getNodeId()+" "+node.getPageRank());
+			/*
+			 * if (Integer.toString(nid.get()).equals(sources[0])) {
+			 * LOG.info("---"+nid);
+			 * 
+			 * 
+			 * 
+			 * float mass; if(missingMass!=0){ mass = sumLogProbs(p, (float)
+			 * (Math.log(missingMass))); float jump = (float)
+			 * (Math.log(ALPHA)-Math.log(n)); float link = sumLogProbs((float)
+			 * Math.log(1.0f - ALPHA), mass);
+			 * 
+			 * p = sumLogProbs(jump, link); } else{ LOG.info(p); mass=0; }
+			 * 
+			 * 
+			 * } else{ //float jump = (float) (Math.log(ALPHA)-Math.log(n));
+			 * //float link = sumLogProbs((float) Math.log(1.0f - ALPHA),p);
+			 * //if(p!=Float.NEGATIVE_INFINITY) // p=sumLogProbs(jump, link); }
+			 */
+			// node.setPageRank(p);
+			LOG.info(node.getNodeId() + " " + node.getPageRank());
 			context.write(nid, node);
 		}
 	}
