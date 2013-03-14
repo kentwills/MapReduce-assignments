@@ -78,9 +78,8 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       }
       LOG.info("Sources all: " +showSources(sources));
       node.setType(PageRankNode.Type.Complete);
-      
-      
- 
+      node.initPageRank(sources.length);
+
     }
 
     @Override
@@ -89,7 +88,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       String[] arr = t.toString().trim().split("\\s+");
       
       nid.set(Integer.parseInt(arr[0]));
-      node.initPageRank(sources.length);
+      
       if (arr.length == 1) {
         node.setNodeId(Integer.parseInt(arr[0]));
         node.setAdjacencyList(new ArrayListOfIntsWritable());

@@ -54,7 +54,8 @@ public class PageRankNode implements Writable {
 	private float [] pagerank;
 	private ArrayListOfIntsWritable adjacenyList;
 
-	public PageRankNode() {}
+	public PageRankNode() {
+	}
 
 	public float getPageRank(int i) {
 		return pagerank[i];
