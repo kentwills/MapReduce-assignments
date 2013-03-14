@@ -287,8 +287,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 					mass=p;
 				
 				float jump = (float) (Math.log(ALPHA));
-				float link = (float) Math.log(1.0f - ALPHA)
-						+ mass;
+				float link = sumLogProbs((float) Math.log(1.0f - ALPHA), mass);
 
 				p = sumLogProbs(jump, link);
 				node.setPageRank(p);
