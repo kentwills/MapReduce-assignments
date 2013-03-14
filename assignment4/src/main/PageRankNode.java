@@ -133,16 +133,9 @@ public class PageRankNode implements Writable {
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(type.val);
 		out.writeInt(nodeid);
-
-		try{
-			size=pagerank.length;
-		}catch(Exception e){
-			System.out.println(nodeid+","+type.val);
-			size=3;
-		}
-		
 		
 		if (type.equals(Type.Mass)) {
+			size=pagerank.length;
 			out.writeInt(size);
 			for (int i = 0; i < size; i++) {
 				out.writeFloat(pagerank[i]);
@@ -151,6 +144,7 @@ public class PageRankNode implements Writable {
 		}
 
 		if (type.equals(Type.Complete)) {
+			size=pagerank.length;
 			out.writeInt(size);
 			for (int i = 0; i < pagerank.length; i++) {
 				out.writeFloat(pagerank[i]);
