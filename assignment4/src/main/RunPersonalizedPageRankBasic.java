@@ -158,7 +158,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			// Now emit the messages all at once.
 			IntWritable k = new IntWritable();
 			PageRankNode mass = new PageRankNode();
-
+			mass.initPageRank(sources.length);
+			
 			for (MapIF.Entry e : map.entrySet()) {
 				k.set(e.getKey());
 
