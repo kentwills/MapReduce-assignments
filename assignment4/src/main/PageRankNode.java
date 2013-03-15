@@ -95,6 +95,11 @@ public class PageRankNode implements Writable {
 
 	public void setType(Type type) {
 		this.type = type;
+		
+		if (type.equals(Type.Mass)||type.equals(Type.Complete)) {
+			pagerank = new ArrayOfFloatsW();
+		}
+		
 	}
 
 	/**
