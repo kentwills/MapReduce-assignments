@@ -53,10 +53,8 @@ import edu.umd.cloud9.io.array.ArrayListOfIntsWritable;
  * @author Jimmy Lin
  * @author Michael Schatz
  */
-public class BuildPersonalizedPageRankRecords extends Configured implements
-		Tool {
-	private static final Logger LOG = Logger
-			.getLogger(BuildPersonalizedPageRankRecords.class);
+public class BuildPersonalizedPageRankRecords extends Configured implements	Tool {
+	private static final Logger LOG = Logger.getLogger(BuildPersonalizedPageRankRecords.class);
 
 	private static final String NODE_CNT_FIELD = "node.cnt";
 	private static final String NODE_SRC_FIELD = "node.src";
@@ -113,7 +111,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements
 				} else
 					node.setPageRank((float) Float.NEGATIVE_INFINITY, i);// (Log(0)
 
-				//LOG.info(nid + " " + node.getPageRank(i));
+				LOG.info(nid + " " + node.getPageRank(i));
 			}
 
 			context.getCounter("graph", "numNodes").increment(1);
