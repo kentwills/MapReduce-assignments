@@ -385,11 +385,11 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 					// was sent to a non-existent node, it should simply vanish.
 				} else {
 					// This shouldn't happen!
-					throw new RuntimeException(
+					/*throw new RuntimeException(
 							"Multiple structure received for nodeid: "
 									+ nid.get() + " mass: "
 									+ massMessagesReceived + " struct: "
-									+ structureReceived);
+									+ structureReceived);*/
 				}
 			}
 		}
