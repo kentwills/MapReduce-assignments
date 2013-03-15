@@ -310,9 +310,9 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		// For keeping track of PageRank mass encountered, so we can compute
 		// missing PageRank mass lost
 		// through dangling nodes.
-		private static final ArrayOfFloatsW totalMass;
+		private static final ArrayOfFloatsW totalMass=new ArrayOfFloatsW();
 		private String[] sources;
-		private static final ArrayOfFloatsW mass;
+		private static final ArrayOfFloatsW mass=new ArrayOfFloatsW();
 
 		@Override
 		public void setup(Context context) throws IOException {
@@ -320,8 +320,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
-			ArrayOfFloatsW mass = new ArrayOfFloatsW(new float[sources.length]);
-			ArrayOfFloatsW totalMass = new ArrayOfFloatsW(new float[sources.length]);
+			mass.setArray(new float[sources.length]);
+			totalMass.setArray(new float[sources.length]);
 			for(int i=0;i<mass.size();i++){
 				mass.set(i, Float.NEGATIVE_INFINITY);
 				totalMass.set(i, Float.NEGATIVE_INFINITY);
