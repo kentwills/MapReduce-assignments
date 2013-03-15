@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -631,21 +632,24 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				+ (System.currentTimeMillis() - startTime) / 1000.0
 				+ " seconds");
 		
-		float[]mass = new float[sources.length];		
+		/*float[]mass = new float[sources.length];		
 		for(int m=0;m<mass.length;m++)
-			mass[m] = getConf().getFloat("MissingMass"+m, 0);
+			mass[m] = getConf().getFloat("MissingMass"+m, 0);*/
 
-		/*float [] massSources = new float[sources.length];
+		LinkedList<Float> massSources = new LinkedList<Float>();//[sources.length];
 	    float mass = Float.NEGATIVE_INFINITY;
 	    FileSystem fs = FileSystem.get(getConf());
 	    for (FileStatus f : fs.listStatus(new Path(outm))) {
-	      FSDataInputStream fin = fs.open(f.getPath());
-	      for(int m=0;m<sources.length;m++)
-	    	  massSources[m] = sumLogProbs(mass, fin.readFloat());
+	      FSDataInputStream fin = fs.open(f.getPath());	      
+	      massSources.add(sumLogProbs(mass, fin.readFloat()));
 	      fin.close();
-	    }*/
+	    }
 		
-		return mass;
+	    float []  m= new float[massSources.size()];
+	    for(int f=0;f<m.length;f++)
+	    	m[f]=massSources.get(f);
+	    
+		return m;
 	}
 
 	private void phase2(int i, int j, float [] missing, String basePath,
