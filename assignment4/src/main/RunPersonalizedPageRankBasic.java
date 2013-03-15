@@ -375,7 +375,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 					context.write(nid, node);
 
 					// Keep track of total PageRank mass.
-					totalMass = sumLogProbs(totalMass, mass);
+					totalMass.setArray(sumLogProbs(totalMass, mass).getArray());
 				} else if (structureReceived == 0) {
 					// We get into this situation if there exists an edge
 					// pointing
