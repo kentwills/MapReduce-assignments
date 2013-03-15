@@ -16,8 +16,8 @@ public class ArrayOfFloatsW implements WritableComparable<ArrayOfFloatsW> {
 	/**
 	 * Constructor with no arguments.
 	 */
-	public ArrayOfFloatsW() {
-		super();
+	public ArrayOfFloatsW() {		
+		super();				
 	}
 
 	/**
@@ -27,6 +27,7 @@ public class ArrayOfFloatsW implements WritableComparable<ArrayOfFloatsW> {
 	 *            input float array
 	 */
 	public ArrayOfFloatsW(float[] array) {
+		this.array=new float[array.length];
 		this.array = array;
 	}
 
@@ -80,6 +81,7 @@ public class ArrayOfFloatsW implements WritableComparable<ArrayOfFloatsW> {
 	 * @param array
 	 */
 	public void setArray(float[] array) {
+		this.array=new float[array.length];
 		this.array = array;
 	}
 
