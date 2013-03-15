@@ -106,9 +106,9 @@ public class BuildPersonalizedPageRankRecords extends Configured implements	Tool
 			}
 
 			for (int i = 0; i < sources.length; i++) {
-				if (Integer.toString(node.getNodeId()).equals(sources[i])) {
-					LOG.info(nid + " " + node.getPageRank(i)+" "+i);
+				if (Integer.toString(node.getNodeId()).equals(sources[i])) {					
 					node.setPageRank((float) 0, i);// Log(1)
+					LOG.info(nid + " " + node.getPageRank(i)+" "+i);
 				} else
 					node.setPageRank((float) Float.NEGATIVE_INFINITY, i);// (Log(0)
 
