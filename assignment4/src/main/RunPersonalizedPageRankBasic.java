@@ -58,6 +58,7 @@ import edu.umd.cloud9.io.map.HMapIVW;
 import edu.umd.cloud9.mapreduce.lib.input.NonSplitableSequenceFileInputFormat;
 import edu.umd.cloud9.util.map.HMapIF;
 import edu.umd.cloud9.util.map.MapIF;
+import edu.umd.cloud9.util.map.MapIV;
 import edu.umd.cloud9.util.map.MapIV.Entry;
 
 /**
@@ -284,7 +285,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				IntWritable k = new IntWritable();
 				PageRankNode mass = new PageRankNode();				
 
-				for (Entry<ArrayOfFloatsW> e : map.entrySet()) {
+				for (MapIV.Entry<ArrayOfFloatsW> e : map.entrySet()) {
 					k.set(e.getKey());
 
 					mass.setNodeId(e.getKey());
