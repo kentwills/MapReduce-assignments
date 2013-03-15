@@ -434,7 +434,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
 			nodeCnt = conf.getInt("NodeCount", 0);
-			
+			LOG.info(sources.length+"----------");
 		}
 
 		@Override
