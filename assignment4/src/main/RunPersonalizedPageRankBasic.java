@@ -631,20 +631,19 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				+ (System.currentTimeMillis() - startTime) / 1000.0
 				+ " seconds");
 
-		ArrayOfFloatsW m = new ArrayOfFloatsW(); 
-				
-				
+
+		/*float mass = Float.NEGATIVE_INFINITY;
 		FileSystem fs = FileSystem.get(getConf());
 		for (FileStatus f : fs.listStatus(new Path(outm))) {
 			FSDataInputStream fin = fs.open(f.getPath());
 			m.readFields(fin);
 			//m.set(sumLogProbs(m, mass).getArray());
 			fin.close();
-		}
+		}*/
 		
-		float[]mass = m.getClone();		
-		//for(int s=0;s<mass.length;s++)
-			//mass[s] = sumLogProbs(Float.NEGATIVE_INFINITY,mass[s]);		
+		float[]mass = new float[sources.length];		
+		for(int m=0;m<mass.length;m++)
+			mass[m] = getConf().getFloat("Missing"+m, 0);		
 
 		return mass;
 	}
