@@ -643,7 +643,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		
 		float[]mass = new float[sources.length];		
 		for(int m=0;m<mass.length;m++)
-			mass[m] = getConf().getFloat("Missing"+m, 0);		
+			mass[m] = getConf().getFloat("MissingMass"+m, 1);		
 
 		return mass;
 	}
