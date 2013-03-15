@@ -643,8 +643,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		}
 		
 		float[]mass = m.getClone();		
-		for(int s=0;s<mass.length;s++)
-			mass[s] = sumLogProbs(Float.NEGATIVE_INFINITY,mass[s]);		
+		//for(int s=0;s<mass.length;s++)
+			//mass[s] = sumLogProbs(Float.NEGATIVE_INFINITY,mass[s]);		
 
 		return mass;
 	}
