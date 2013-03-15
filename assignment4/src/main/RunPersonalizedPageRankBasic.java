@@ -636,18 +636,31 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		for(int m=0;m<mass.length;m++)
 			mass[m] = getConf().getFloat("MissingMass"+m, 0);*/
 
-		LinkedList<Float> massSources = new LinkedList<Float>();//[sources.length];
+		/*LinkedList<Float> massSources = new LinkedList<Float>();//[sources.length];
 	    float mass = Float.NEGATIVE_INFINITY;
 	    FileSystem fs = FileSystem.get(getConf());
 	    for (FileStatus f : fs.listStatus(new Path(outm))) {
-	      FSDataInputStream fin = fs.open(f.getPath());	      
+	      FSDataInputStream fin = fs.open(f.getPath());
+	      
 	      massSources.add(sumLogProbs(mass, fin.readFloat()));
 	      fin.close();
 	    }
 		
 	    float []  m= new float[massSources.size()];
 	    for(int f=0;f<m.length;f++)
-	    	m[f]=massSources.get(f);
+	    	m[f]=massSources.get(f);*/
+		
+		 float mass = Float.NEGATIVE_INFINITY;
+		    FileSystem fs = FileSystem.get(getConf());
+		    for (FileStatus f : fs.listStatus(new Path(outm))) {
+		      FSDataInputStream fin = fs.open(f.getPath());
+		      mass = sumLogProbs(mass, fin.readFloat());
+		      fin.close();
+		    }
+		    
+		    float []  m= new float[sources.length];
+		    for(int f=0;f<m.length;f++)
+		    	m[f]=mass;
 	    
 		return m;
 	}
@@ -676,7 +689,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		
 		for (int m=0;m<missing.length;m++)
 			job.getConfiguration().setFloat("MissingMass"+m, missing[m]);
-					
+			
 		job.getConfiguration().setInt("NodeCount", numNodes);
 
 		job.setNumReduceTasks(0);
