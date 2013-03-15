@@ -14,7 +14,9 @@
  * permissions and limitations under the License.
  */
 
+import java.io.DataInput;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -415,19 +417,26 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 	private static class MapPageRankMassDistributionClass extends
 			Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode> {
 		private float [] missingMass;
+		//private ArrayOfFloatsW missingMass2 = new ArrayOfFloatsW();
 		private int nodeCnt = 0;
 		private String[] sources;
 
 		@Override
 		public void setup(Context context) throws IOException {
-			Configuration conf = context.getConfiguration();			
-			missingMass  = StringArrayToFloatArray(conf.getStrings("MissingMass", ""));
-			nodeCnt = conf.getInt("NodeCount", 0);	
+			Configuration conf = context.getConfiguration();
+			
+			
+			//missingMass2.readFields((DataInput) conf.getConfResourceAsInputStream("MissingMass2"));
+			//missingMass  = StringArrayToFloatArray(conf.getStrings("MissingMass", ""));
+			//nodeCnt = conf.getInt("NodeCount", 0);	
 			
 			sources = conf.get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
+			
+			for(int m=0;m<sources.length;m++)
+				missingMass[m] = conf.getFloat("MissingMass"+m, 0);
 		}
 
 		@Override
@@ -662,7 +671,13 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				"mapred.map.tasks.speculative.execution", false);
 		job.getConfiguration().setBoolean(
 				"mapred.reduce.tasks.speculative.execution", false);
-		job.getConfiguration().setStrings("MissingMass", FloatArrayToStringArray(missing));
+		
+		for (int m=0;m<missing.length;m++)
+			job.getConfiguration().setFloat("MissingMass"+m, missing[m]);
+		
+			//job.getConfiguration().setStrings("MissingMass", FloatArrayToStringArray(missing));
+		
+		//job.getConfiguration().addResource(new ArrayOfFloatsW(missing).EmitStream(), "MissingMass2");
 		job.getConfiguration().setInt("NodeCount", numNodes);
 
 		job.setNumReduceTasks(0);
