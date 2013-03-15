@@ -430,10 +430,9 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 		@Override
 		public void setup(Context context) throws IOException {
-			Configuration conf = context.getConfiguration();
-			LOG.info("RESULT     ___________" + (Float.NEGATIVE_INFINITY - .82));
+			Configuration conf = context.getConfiguration();			
 			missingMass = conf.getFloat("MissingMass", 0.0f);
-			sources = context.getConfiguration().get(NODE_SRC_FIELD).split(",");
+			sources = conf.get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
@@ -453,7 +452,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 					// if (missingMass != 0) {
 					float jump = (float) (Math.log(ALPHA));
 					float link = (float) Math.log(1.0f - ALPHA)
-							+ sumLogProbs(p, (float) (missingMass));
+							+ sumLogProbs(p, (float) Math.log(missingMass));
 
 					p = sumLogProbs(jump, link);
 					node.setPageRank(p, i);
@@ -638,7 +637,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(PageRankNode.class);
 
-		job.setMapperClass(Mapper.class);
+		job.setMapperClass(MapClass.class);
 		job.setCombinerClass(CombineClass.class);
 		job.setReducerClass(ReduceClass.class);
 
