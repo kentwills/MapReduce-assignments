@@ -441,24 +441,21 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		public void map(IntWritable nid, PageRankNode node, Context context)
 				throws IOException, InterruptedException {
 			float n = nodeCnt;
-			
-			float [] link  = new float[sources.length];
+						
 			float [] p = node.getPageRank();
 			
 			for (int i = 0; i < sources.length; i++) {				 
 				if (Integer.toString(nid.get()).equals(sources[i])) {
 					LOG.info("---" + nid);
-					float jump = (float) (Math.log(ALPHA));
+					float jump = (float) (Math.log(ALPHA));					
+					float link=(float) Math.log(1.0f - ALPHA)+ sumLogProbs(p[i], (float) Math.log(missingMass[i]));
 					
-					link[i]=(float) Math.log(1.0f - ALPHA)+ sumLogProbs(p[i], (float) Math.log(missingMass[i]));
-
-					p[i] = sumLogProbs(jump, link[i]);
-					node.setPageRank(p[i], i);
-
+					LOG.info(node.getNodeId() + " " + node.getPageRank(i));
+					node.setPageRank(sumLogProbs(jump, link), i);
+					LOG.info(node.getNodeId() + " " + node.getPageRank(i));
 				}
 			}
 			
-			LOG.info(node.getNodeId() + " " + node.getPageRank(0));
 			context.write(nid, node);
 		}
 	}
