@@ -631,11 +631,11 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				+ (System.currentTimeMillis() - startTime) / 1000.0
 				+ " seconds");
 		
-		/*float[]mass = new float[sources.length];		
+		float[]mass = new float[sources.length];		
 		for(int m=0;m<mass.length;m++)
-			mass[m] = FileSystem.get(getConf()).getFloat("MissingMass"+m, 1);*/
+			mass[m] = getConf().getFloat("MissingMass"+m, 0);
 
-		float [] massSources = new float[sources.length];
+		/*float [] massSources = new float[sources.length];
 	    float mass = Float.NEGATIVE_INFINITY;
 	    FileSystem fs = FileSystem.get(getConf());
 	    for (FileStatus f : fs.listStatus(new Path(outm))) {
@@ -643,9 +643,9 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 	      for(int m=0;m<sources.length;m++)
 	    	  massSources[m] = sumLogProbs(mass, fin.readFloat());
 	      fin.close();
-	    }
+	    }*/
 		
-		return massSources;
+		return mass;
 	}
 
 	private void phase2(int i, int j, float [] missing, String basePath,
