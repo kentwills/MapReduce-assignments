@@ -1,7 +1,17 @@
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+
+import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
@@ -56,7 +66,7 @@ public class ArrayOfFloatsW implements WritableComparable<ArrayOfFloatsW> {
 			out.writeFloat(get(i));
 		}
 	}
-
+	
 	/**
 	 * Get a deep copy of the array.
 	 * 

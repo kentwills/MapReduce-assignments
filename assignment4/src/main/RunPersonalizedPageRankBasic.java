@@ -290,7 +290,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 					mass.setNodeId(e.getKey());
 					mass.setType(PageRankNode.Type.Mass);
-					mass.setPageRank(e.getValue().getArray());
+					mass.setPageRank(e.getValue().getClone());
 
 					context.write(k, mass);
 				}
@@ -640,7 +640,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			fin.close();
 		}
 		
-		float[]mass = m.getArray();		
+		float[]mass = m.getClone();		
 		for(int s=0;s<mass.length;s++)
 			mass[s] = sumLogProbs(Float.NEGATIVE_INFINITY,mass[s]);		
 
