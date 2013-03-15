@@ -417,7 +417,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 	private static class MapPageRankMassDistributionClass extends
 			Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode> {
 		private float [] missingMass;
-		//private ArrayOfFloatsW missingMass2 = new ArrayOfFloatsW();
 		private int nodeCnt = 0;
 		private String[] sources;
 
@@ -425,18 +424,15 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		public void setup(Context context) throws IOException {
 			Configuration conf = context.getConfiguration();
 			
-			
-			//missingMass2.readFields((DataInput) conf.getConfResourceAsInputStream("MissingMass2"));
-			//missingMass  = StringArrayToFloatArray(conf.getStrings("MissingMass", ""));
-			//nodeCnt = conf.getInt("NodeCount", 0);	
-			
 			sources = conf.get(NODE_SRC_FIELD).split(",");
 			if (sources.length == 0) {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
 			
+			missingMass=new float[sources.length];
 			for(int m=0;m<sources.length;m++)
 				missingMass[m] = conf.getFloat("MissingMass"+m, 0);
+			LOG.info(printArray(missingMass)+"------------------------------------------------");
 		}
 
 		@Override
@@ -674,10 +670,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		
 		for (int m=0;m<missing.length;m++)
 			job.getConfiguration().setFloat("MissingMass"+m, missing[m]);
-		
-			//job.getConfiguration().setStrings("MissingMass", FloatArrayToStringArray(missing));
-		
-		//job.getConfiguration().addResource(new ArrayOfFloatsW(missing).EmitStream(), "MissingMass2");
+					
 		job.getConfiguration().setInt("NodeCount", numNodes);
 
 		job.setNumReduceTasks(0);
@@ -770,7 +763,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		return concat.substring(0, concat.length() - 1);
 	}
 	
-	private String printArray(float[] array) {
+	private static String printArray(float[] array) {
 		String concat = "";
 		for (float s : array) {
 			concat += s + ",";
