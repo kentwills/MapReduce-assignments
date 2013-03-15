@@ -630,22 +630,22 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		System.out.println("Job Finished in "
 				+ (System.currentTimeMillis() - startTime) / 1000.0
 				+ " seconds");
-
-
-		/*float mass = Float.NEGATIVE_INFINITY;
-		FileSystem fs = FileSystem.get(getConf());
-		for (FileStatus f : fs.listStatus(new Path(outm))) {
-			FSDataInputStream fin = fs.open(f.getPath());
-			m.readFields(fin);
-			//m.set(sumLogProbs(m, mass).getArray());
-			fin.close();
-		}*/
 		
-		float[]mass = new float[sources.length];		
+		/*float[]mass = new float[sources.length];		
 		for(int m=0;m<mass.length;m++)
-			mass[m] = getConf().getFloat("MissingMass"+m, 1);		
+			mass[m] = FileSystem.get(getConf()).getFloat("MissingMass"+m, 1);*/
 
-		return mass;
+		float [] massSources = new float[sources.length];
+	    float mass = Float.NEGATIVE_INFINITY;
+	    FileSystem fs = FileSystem.get(getConf());
+	    for (FileStatus f : fs.listStatus(new Path(outm))) {
+	      FSDataInputStream fin = fs.open(f.getPath());
+	      for(int m=0;m<sources.length;m++)
+	    	  massSources[m] = sumLogProbs(mass, fin.readFloat());
+	      fin.close();
+	    }
+		
+		return massSources;
 	}
 
 	private void phase2(int i, int j, float [] missing, String basePath,
