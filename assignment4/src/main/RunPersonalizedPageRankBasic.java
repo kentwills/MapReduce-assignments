@@ -727,6 +727,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 			c.set(i, (float) (a.get(i) + StrictMath.log1p(StrictMath.exp(b.get(i) - a.get(i)))));
 		}
+		return c;
 	}
 
 }
