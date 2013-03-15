@@ -66,8 +66,19 @@ public class PageRankNode implements Writable {
 		this.pagerank = new float[i];
 	}
 	
+	public boolean isPageRankInit(){
+		if (this.pagerank==null)
+			return false;
+		else
+			return true;
+	}
+	
 	public void setPageRank(float p,int i) {
 		this.pagerank[i] = p;
+	}
+	
+	public void setPageRank(float [] p) {
+		this.pagerank = p;
 	}
 
 	public int getNodeId() {
