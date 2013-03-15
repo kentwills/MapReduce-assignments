@@ -51,38 +51,26 @@ public class PageRankNode implements Writable {
 
 	private Type type;
 	private int nodeid;
-	private int size;
-	private float [] pagerank;
+	private ArrayOfFloatsW pagerank;
 	private ArrayListOfIntsWritable adjacenyList;
 
 	public PageRankNode() {
 	}
 
 	public float getPageRank(int i) {
-		return pagerank[i];
+		return pagerank.get(i);
 	}
 	
 	public float [] getPageRank() {
-		return pagerank;
-	}
-
-	public void initPageRank(int i) {
-		this.pagerank = new float[i];
-	}
-	
-	public boolean isPageRankInit(){
-		if (this.pagerank==null)
-			return false;
-		else
-			return true;
+		return pagerank.getArray();
 	}
 	
 	public void setPageRank(float p,int i) {
-		this.pagerank[i] = p;
+		this.pagerank.set(i, p);
 	}
 	
 	public void setPageRank(float [] p) {
-		this.pagerank = p;
+		this.pagerank.setArray(p);
 	}
 
 	public int getNodeId() {
@@ -120,22 +108,15 @@ public class PageRankNode implements Writable {
 		type = mapping[b];
 		nodeid = in.readInt();
 
-		
 		if (type.equals(Type.Mass)) {
-			size = in.readInt();
-			initPageRank(size);
-			for (int i = 0; i < size; i++) {
-				pagerank[i]= in.readFloat();
-			}
+			pagerank=new ArrayOfFloatsW();
+			pagerank.readFields(in);
 			return;
 		}
 
 		if (type.equals(Type.Complete)) {
-			size = in.readInt();
-			initPageRank(size);
-			for (int i = 0; i < size; i++) {
-				pagerank[i]= in.readFloat();
-			}
+			pagerank=new ArrayOfFloatsW();
+			pagerank.readFields(in);			
 		}
 
 		adjacenyList = new ArrayListOfIntsWritable();
@@ -153,20 +134,12 @@ public class PageRankNode implements Writable {
 		out.writeInt(nodeid);
 		
 		if (type.equals(Type.Mass)) {
-			size=pagerank.length;
-			out.writeInt(size);
-			for (int i = 0; i < size; i++) {
-				out.writeFloat(pagerank[i]);
-			}
+			pagerank.write(out);
 			return;
 		}
 
 		if (type.equals(Type.Complete)) {
-			size=pagerank.length;
-			out.writeInt(size);
-			for (int i = 0; i < pagerank.length; i++) {
-				out.writeFloat(pagerank[i]);
-			}
+			pagerank.write(out);
 		}
 
 		adjacenyList.write(out);
@@ -203,7 +176,6 @@ public class PageRankNode implements Writable {
   public static PageRankNode create(DataInput in) throws IOException {
     PageRankNode m = new PageRankNode();
     m.readFields(in);
-
     return m;
   }
 
