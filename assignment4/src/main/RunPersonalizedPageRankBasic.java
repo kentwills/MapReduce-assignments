@@ -225,7 +225,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				throw new RuntimeException(NODE_SRC_FIELD + " cannot be 0!");
 			}
 
-			data.setArray(new float[sources.length]);
+			data= new ArrayOfFloatsW(new float[sources.length]);
 		}
 
 		@Override
