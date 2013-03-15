@@ -45,6 +45,7 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
+import org.mortbay.log.Log;
 
 import com.google.common.base.Preconditions;
 
@@ -237,6 +238,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			intermediateStructure.setType(PageRankNode.Type.Structure);
 			intermediateStructure.setAdjacencyList(node.getAdjacenyList());
 
+			Log.info(intermediateStructure.getNodeId()+"");
 			context.write(nid, intermediateStructure);
 			
 				int massMessages = 0;
@@ -283,7 +285,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 		@Override
 		public void cleanup(Context context) throws IOException,
 				InterruptedException {
-			for (int i = 0; i < sources.length; i++) {
+
 				// Now emit the messages all at once.
 				IntWritable k = new IntWritable();
 				PageRankNode mass = new PageRankNode();
@@ -298,7 +300,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 					context.write(k, mass);
 				}
-			}
+			
 		}
 	}
 
@@ -634,7 +636,9 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				+ (System.currentTimeMillis() - startTime) / 1000.0
 				+ " seconds");
 
-		float mass = Float.NEGATIVE_INFINITY;
+		ArrayOfFloatsW m = new ArrayOfFloatsW(new float[sources.length]); 
+		
+		float mass = Float.NEGATIVE_INFINITY;		
 		FileSystem fs = FileSystem.get(getConf());
 		for (FileStatus f : fs.listStatus(new Path(outm))) {
 			FSDataInputStream fin = fs.open(f.getPath());
