@@ -66,3 +66,16 @@ Issues
 
 <li>Final Notes:  I feel that I have completed much of this assignment, with little to show for it.  I feel that if I tweeked a few things here and there I would have a fully working implementation.  The problem is that I am now officially stuck.  I have done what I thought would be sufficient for tweaking, but to no avail.  I am rather embarrassed to be turning in this quality of an assignment.</li>
 </p>
+
+Grading
+=======
+
+I looked at your code and it's definitely on the right track... Let me
+know if you'd like to go over anything once I distribute the solutions.
+
++8 point for the single source implementation, +10 points for
+the multi-source implementation, but -25% for late penalty.
+
+Score: 14/35
+
+-Jimmy
