@@ -2,7 +2,7 @@
 REGISTER 'tweet_time_func.py' USING jython AS t;
 
 -- Load Data
-tweets = load '/user/shared/tweets2011/tweets2011.txt' as (id, time, username, text);
+tweets = load '/user/shared/tweets2011/tweets2011.txt' as (id:int, time:chararray, username:chararray, text:chararray);
 
 -- Filter with respect to Egypt
 tweets_with_egypt = FILTER tweets BY text matches '.*([Ee][Gg][Yy][Pp][Tt]|[Cc][Aa][Ii][Rr][Oo]).*';
