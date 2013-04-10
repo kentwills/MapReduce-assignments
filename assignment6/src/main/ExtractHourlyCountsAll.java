@@ -52,7 +52,7 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
       }
       }
     }
-  }
+  
 
   // Reducer: sums up all the counts.
   private static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
