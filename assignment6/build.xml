@@ -25,7 +25,7 @@
     <fileset dir="${lib.dir}/" includes="guava*.jar"/>
   </path>
 
-  <property name="ivy.install.version" value="2.2.0"/>
+  <property name="ivy.install.version" value="2.2.0"/> 
   <property name="ivy.jar.dir" value="${basedir}/ivy"/>
   <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar"/>
   <property name="ivy.settings.file" value="${basedir}/ivy/ivysettings.xml" />
