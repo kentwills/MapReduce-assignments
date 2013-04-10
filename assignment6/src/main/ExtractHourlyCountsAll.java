@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
 
-public class WordCount extends Configured implements Tool {
+public class ExtractHourlyCountsAll extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(WordCount.class);
 
   // Mapper: emits (token, 1) for every word occurrence.
