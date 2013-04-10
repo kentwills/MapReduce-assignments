@@ -41,7 +41,7 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
-      String [] tweet = line.split("\t");
+      String [] tweet = line.split("\\t");
       if (tweet.length!=0){
     	  String[] tweet_time_array = tweet[2].split("\\s+");
     	  System.out.println(tweet[2]);
