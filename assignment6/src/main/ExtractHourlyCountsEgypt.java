@@ -44,10 +44,11 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
       String [] tweet = line.split("\\t");      
       if (tweet.length>1){
     	  String[] tweet_time_array = tweet[1].split("\\s+");    	  
-    	  //System.out.println(tweet[1]);
+    	  System.out.println(tweet[3]);
     	  if(tweet_time_array.length==6){    		  
     		  WORD.set(tweet_time_array[5]+""+tweet_time_array[1]+""+tweet_time_array[2]+"_"+tweet_time_array[3].split(":")[0]);
-    		  if(WORD.toString().matches(".*([Ee][Gg][Yy][Pp][Tt]|[Cc][Aa][Ii][Rr][Oo]).*"))
+		  if(tweet.length==4)
+		      if(tweet[3].matches(".*([Ee][Gg][Yy][Pp][Tt]|[Cc][Aa][Ii][Rr][Oo]).*"))
     			  context.write(WORD, ONE);
     	  }
       }
