@@ -41,7 +41,7 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
-      StringTokenizer itr = new StringTokenizer(line);
+      StringTokenizer itr = new StringTokenizer(line,"\t");
       while (itr.hasMoreTokens()) {
     	  System.out.println(itr.nextToken());
         WORD.set(itr.nextToken());
