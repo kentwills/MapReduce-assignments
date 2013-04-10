@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 import cern.colt.Arrays;
 
 public class ExtractHourlyCountsAll extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(WordCount.class);
+  private static final Logger LOG = Logger.getLogger(ExtractHourlyCountsAll.class);
 
   // Mapper: emits (token, 1) for every word occurrence.
   private static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
@@ -73,7 +73,7 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  public WordCount() {}
+  public ExtractHourlyCountsAll() {}
 
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
@@ -117,15 +117,15 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    LOG.info("Tool: " + WordCount.class.getSimpleName());
+    LOG.info("Tool: " + ExtractHourlyCountsAll.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
     LOG.info(" - output path: " + outputPath);
     LOG.info(" - number of reducers: " + reduceTasks);
 
     Configuration conf = getConf();
     Job job = Job.getInstance(conf);
-    job.setJobName(WordCount.class.getSimpleName());
-    job.setJarByClass(WordCount.class);
+    job.setJobName(ExtractHourlyCountsAll.class.getSimpleName());
+    job.setJarByClass(ExtractHourlyCountsAll.class);
 
     job.setNumReduceTasks(reduceTasks);
 
@@ -154,6 +154,6 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new WordCount(), args);
+    ToolRunner.run(new ExtractHourlyCountsAll(), args);
   }
 }
