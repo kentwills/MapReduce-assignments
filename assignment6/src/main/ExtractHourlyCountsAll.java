@@ -43,6 +43,7 @@ public class WordCount extends Configured implements Tool {
       String line = ((Text) value).toString();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
+    	  System.out.println(itr.nextToken());
         WORD.set(itr.nextToken());
         context.write(WORD, ONE);
       }
