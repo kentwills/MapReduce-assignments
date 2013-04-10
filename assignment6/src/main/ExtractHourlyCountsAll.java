@@ -43,7 +43,7 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
       String line = ((Text) value).toString();
       String [] tweet = line.split("\\t");
       System.out.println(tweet[0]);
-      if (tweet.length!=0){
+      if (tweet.length>1){
     	  String[] tweet_time_array = tweet[1].split("\\s+");    	  
     	  if(tweet_time_array.length==6){
     		  System.out.println(tweet[2]);
