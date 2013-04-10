@@ -41,11 +41,15 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
-      StringTokenizer itr = new StringTokenizer(line,"\t");
-      while (itr.hasMoreTokens()) {
-    	  System.out.println(itr.nextToken());
-        WORD.set(itr.nextToken());
-        context.write(WORD, ONE);
+      String [] tweet = line.split("\t");
+      if (tweet.length!=0){
+    	  String[] tweet_time_array = tweet[2].split("\\s+");
+    	  System.out.println(tweet[2]);
+    	  if(tweet_time_array==6){
+    		  WORD.set(tweet_time_array[5]+""+tweet_time_array[1]+""+tweet_time_array[2]+"_"+tweet_time_array[3].split(":")[0]);
+    		  context.write(WORD, ONE);
+    	  }
+      }
       }
     }
   }
