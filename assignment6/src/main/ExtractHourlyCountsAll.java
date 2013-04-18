@@ -109,8 +109,6 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
     LOG.info("Tool: " + ExtractHourlyCountsAll.class.getSimpleName());
-    LOG.info(" - input path: " + inputPath);
-    LOG.info(" - output path: " + outputPath);
     LOG.info(" - number of reducers: " + reduceTasks);
 
     Configuration conf = getConf();
