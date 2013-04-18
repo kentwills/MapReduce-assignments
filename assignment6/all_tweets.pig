@@ -13,4 +13,4 @@ counts =  FOREACH grouped GENERATE group, COUNT(tweet_buckets.hour_block) as num
 
 top_results = ORDER counts BY group ASC;
 
-store top_results into 'hourly-counts-all.txt';
+store top_results into 'KENTWILLS-all-PIG';

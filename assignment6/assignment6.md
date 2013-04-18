@@ -19,7 +19,7 @@ Pig Analysis Script #1 (Hourly basis)
     counts =  FOREACH grouped GENERATE group, COUNT(tweet_buckets.hour_block) as num_tweets;
 
     top_results = ORDER counts BY group ASC;
-    store top_results into 'hourly-counts-all.txt';
+    store top_results into 'KENTWILLS-all-PIG';
 
 Pig Analysis Script #2 (Hourly basis on Egypt/Cairo)
 -------------------
@@ -41,7 +41,7 @@ Pig Analysis Script #2 (Hourly basis on Egypt/Cairo)
     counts =  FOREACH grouped GENERATE group, COUNT(tweet_buckets.hour_block) as num_tweets;
 
     top_results = ORDER counts BY group ASC;
-    store top_results into 'hourly-counts-egypt.txt';
+    store top_results into 'KENTWILLS-egypt-PIG';
 
     
 UDF tweet_time_func.py
