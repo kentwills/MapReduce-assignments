@@ -103,8 +103,8 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
       return -1;
     }
 
-    String inputPath = "/user/shared/tweets2011/tweets2011.txt"
-    String outputPath = "KENTWILLS-all"
+    String inputPath = "/user/shared/tweets2011/tweets2011.txt";
+    String outputPath = "KENTWILLS-all";
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
