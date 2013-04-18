@@ -1,8 +1,8 @@
 Assignment 6
 =========
+*Note
 
-
-Pig Analysis Script #1 (Hourly basis)
+Pig Analysis Script #1 (Hourly basis, all_tweets.pig)
 -------------------
 
     -- Use UDF
@@ -21,7 +21,7 @@ Pig Analysis Script #1 (Hourly basis)
     top_results = ORDER counts BY group ASC;
     store top_results into 'KENTWILLS-all-PIG';
 
-Pig Analysis Script #2 (Hourly basis on Egypt/Cairo)
+Pig Analysis Script #2 (Hourly basis on Egypt/Cairo, all_tweets_Egypt.pig)
 -------------------
 
     -- Use UDF
