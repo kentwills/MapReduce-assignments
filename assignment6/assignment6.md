@@ -56,3 +56,12 @@ UDF tweet_time_func.py
 		    return tweet_time[5] + "" + tweet_time[1] + "" + tweet_time[2] + "_"+tweet_time[3][0:2]
 		else:
 	        return
+
+Grading
+=======
+
+Everything looks great!
+
+Score: 25/25
+
+-Jimmy
